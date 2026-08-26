@@ -1,4 +1,4 @@
-import { createRoom, FloorCorridorGroups } from './positionedElementsCommon';
+import { createRoom, type FloorCorridorGroups } from './positionedElementsCommon';
 
 export const corridorGroupsFloor2: FloorCorridorGroups = {
   corridor1:{
@@ -179,6 +179,36 @@ export const corridorGroupsFloor2: FloorCorridorGroups = {
     name: "Коридор 2",
 
     rooms: [
+      createRoom({
+        id: 'stairsrotunda1',
+        category: 'stairs',
+        x: 2400,
+        y: 2439,
+        width: 92,
+        height: 113,
+        rotation: -45,
+        corridor: 2,
+      }),
+      createRoom({
+        id: 'stairsrotunda2',
+        category: 'stairs',
+        x: 2211,
+        y: 2627,
+        width: 90,
+        height: 116,
+        rotation: -42,
+        corridor: 2,
+      }),
+      createRoom({
+        id: { Ukrainian: 'Конференц-зал', English: 'Conference Hall' },
+        text: { OnDefault: { Ukrainian: 'Конференц-зал', English: 'Conference Hall' } },
+        x: 2417,
+        y: 2749,
+        width: 398,
+        height: 262,
+        rotation: -45,
+        corridor: 2,
+      }),
       createRoom({
 
         id: {

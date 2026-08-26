@@ -1,6 +1,14 @@
 import type { PositionedElementConfig } from './PositionedElementsService';
 import type { BeaconRoute } from './BeaconRouteService';
 import beaconRouteService from './BeaconRouteService';
+import {
+  dijkstra,
+  type MapEdge,
+  type MapNode,
+  type PathResult,
+} from '../utils/pathfinding';
+import { mapNodes as defaultMapNodes } from '../config/mapNodes';
+import { mapEdges as defaultMapEdges } from '../config/mapEdges';
 
 export interface RoutePoint {
   x: number;
@@ -23,12 +31,56 @@ export interface Route {
   corridor?: number;
   flipArrow?: boolean;
   beaconRoute?: BeaconRoute; // Маршрут через маяки
+  nodePath?: PathResult;
 }
 
 class RouteService {
-  private static readonly MIN_CORRIDOR_OFFSET = 40;
   private routes: Route[] = [];
   private listeners: ((routes: Route[]) => void)[] = [];
+  private graphNodes: MapNode[] = defaultMapNodes as MapNode[];
+  private graphEdges: MapEdge[] = defaultMapEdges as MapEdge[];
+
+  setGraph(nodes: MapNode[], edges: MapEdge[]) {
+    this.graphNodes = nodes;
+    this.graphEdges = edges;
+  }
+
+  // Resolve a room (from the visual config) to a graph node.
+  // Numbered rooms match a node whose roomId equals the number; everything
+  // else falls back to the closest node on the same floor by coordinates.
+  private resolveRoomNode(room: PositionedElementConfig): MapNode | null {
+    if (this.graphNodes.length === 0) return null;
+
+    // only nodes that participate in at least one edge can be routed
+    const connected = new Set<string>();
+    for (const edge of this.graphEdges) {
+      connected.add(edge.from);
+      connected.add(edge.to);
+    }
+
+    const floor = room.floor ?? 1;
+    const floorNodes = this.graphNodes.filter(
+      (node) => node.floor === floor && connected.has(node.id),
+    );
+    if (floorNodes.length === 0) return null;
+
+    if (typeof room.number === 'number') {
+      const byNumber = floorNodes.find((node) => node.roomId === String(room.number));
+      if (byNumber) return byNumber;
+    }
+
+    const center = this.getRoomCenter(room);
+    let nearest: MapNode | null = null;
+    let bestDistance = Infinity;
+    for (const node of floorNodes) {
+      const distance = Math.hypot(node.x - center.x, node.y - center.y);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        nearest = node;
+      }
+    }
+    return nearest;
+  }
 
   private getRoomCenter(room: PositionedElementConfig): RoutePoint {
     return {
@@ -310,7 +362,6 @@ class RouteService {
       centerY = room.y + (room.height || 0);
     }
 
-    console.log(`RouteService: Найдена точка ${side} стороны комнаты ${room.id}:`, { x: centerX, y: centerY });
     return { x: centerX, y: centerY };
   }
 
@@ -341,14 +392,11 @@ class RouteService {
       }
     }
 
-    console.log(`RouteService: Определены оптимальные стороны: from=${fromSide}, to=${toSide}`);
     return { fromSide, toSide };
   }
 
   // Построить маршрут между двумя комнатами
   buildRoute(fromRoomId: string, toRoomId: string, rooms: PositionedElementConfig[]): Route | null {
-    console.log('RouteService: Попытка построить маршрут:', { fromRoomId, toRoomId });
-    console.log('RouteService: Доступные комнаты:', rooms.map(r => ({ id: r.id, number: r.number })));
     
     const fromRoom = rooms.find(room => room.id === fromRoomId);
     const toRoom = rooms.find(room => room.id === toRoomId);
@@ -358,10 +406,12 @@ class RouteService {
       return null;
     }
 
-    console.log('RouteService: Найдены комнаты:', { 
-      from: { id: fromRoom.id, x: fromRoom.x, y: fromRoom.y, width: fromRoom.width, height: fromRoom.height },
-      to: { id: toRoom.id, x: toRoom.x, y: toRoom.y, width: toRoom.width, height: toRoom.height }
-    });
+
+    const fromNode = this.resolveRoomNode(fromRoom);
+    const toNode = this.resolveRoomNode(toRoom);
+    const nodePath = fromNode && toNode
+      ? dijkstra(fromNode.id, toNode.id, this.graphNodes, this.graphEdges)
+      : null;
 
     // Пытаемся построить маршрут через маяки
     let beaconRoute: BeaconRoute | null = null;
@@ -391,7 +441,11 @@ class RouteService {
     let toPoint: RoutePoint;
     let viaPoints: RoutePoint[] | undefined;
 
-    if (corridorPath) {
+    if (nodePath && nodePath.nodes.length >= 2) {
+      fromPoint = nodePath.nodes[0];
+      toPoint = nodePath.nodes[nodePath.nodes.length - 1];
+      viaPoints = nodePath.nodes.slice(1, -1);
+    } else if (corridorPath) {
       fromPoint = corridorPath.from;
       toPoint = corridorPath.to;
       viaPoints = corridorPath.via;
@@ -443,14 +497,13 @@ if (this.routes.length > 0) {
       visible: true,
       corridor: sharedCorridor,
       flipArrow: sharedCorridor === 3,
-      beaconRoute: beaconRoute || undefined
+      beaconRoute: beaconRoute || undefined,
+      nodePath: nodePath || undefined,
     };
 
-    console.log('RouteService: Создан маршрут:', route);
 
     // Добавляем маршрут в список
     this.routes.push(route);
-    console.log('RouteService: Маршрут добавлен, всего маршрутов:', this.routes.length);
     
     this.emit();
 
@@ -459,14 +512,12 @@ if (this.routes.length > 0) {
 
   // Очистить все маршруты
   clearRoutes() {
-    console.log('RouteService: Очищаю все маршруты');
     this.routes = [];
     this.emit();
   }
 
   // Получить все маршруты
   getRoutes(): Route[] {
-    console.log('RouteService: Запрос на получение маршрутов, всего:', this.routes.length);
     return [...this.routes];
   }
 }

@@ -1358,5 +1358,105 @@ export const mapEdges = [
     "from": "f3_node_164",
     "to": "f3_node_256",
     "floor": 3
+  },
+  {
+    "from": "f1_node_195",
+    "to": "f1_node_284",
+    "floor": 1
+  },
+  {
+    "from": "f2_node_86",
+    "to": "f2_node_285",
+    "floor": 2
+  },
+  {
+    "from": "f3_node_286",
+    "to": "f3_node_129",
+    "floor": 3
+  },
+  {
+    "from": "f3_node_287",
+    "to": "f3_node_288",
+    "floor": 3
+  },
+  {
+    "from": "f3_node_288",
+    "to": "f3_node_289",
+    "floor": 3
+  },
+  {
+    "from": "f3_node_289",
+    "to": "f3_node_290",
+    "floor": 3
+  },
+  {
+    "from": "f3_node_291",
+    "to": "f3_node_290",
+    "floor": 3
+  },
+  {
+    "from": "f2_node_292",
+    "to": "f2_node_83",
+    "floor": 2
+  },
+  {
+    "from": "f1_node_13",
+    "to": "f1_node_296",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_295",
+    "to": "f1_node_296",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_295",
+    "to": "f1_node_294",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_294",
+    "to": "f1_node_293",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_10",
+    "to": "f1_node_297",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_47",
+    "to": "f1_node_298",
+    "floor": 1
+  },
+  {
+    "from": "f3_node_299",
+    "to": "f3_node_141",
+    "floor": 3
+  },
+  {
+    "from": "f1_node_300",
+    "to": "f1_node_296",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_301",
+    "to": "f1_node_303",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_295",
+    "to": "f1_node_301",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_303",
+    "to": "f1_node_302",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_303",
+    "to": "f1_node_304",
+    "floor": 1
   }
 ];

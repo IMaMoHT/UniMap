@@ -124,8 +124,8 @@ export const BeaconRenderer: React.FC<BeaconRendererProps> = ({
           className="beacon-tooltip"
           style={{
             position: 'absolute',
-            left: beacons.find(b => b.id === hoveredBeaconId)?.x + 12,
-            top: beacons.find(b => b.id === hoveredBeaconId)?.y - 20,
+            left: (beacons.find(b => b.id === hoveredBeaconId)?.x ?? 0) + 12,
+            top: (beacons.find(b => b.id === hoveredBeaconId)?.y ?? 0) - 20,
             background: 'rgba(0, 0, 0, 0.8)',
             color: '#fff',
             padding: '8px 12px',

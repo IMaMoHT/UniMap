@@ -1,15 +1,25 @@
-import React, { useState, Suspense, lazy } from "react";
+import React, { useState, Suspense, lazy, useEffect } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 import { MAP_WIDTH, MAP_HEIGHT } from "@/config/mapDimensions";
 import { mapNodes } from '@/config/mapNodes';
 import { mapEdges } from '@/config/mapEdges';
+import routeService from '@/services/RouteService';
+import type { PathResult } from '@/utils/pathfinding';
 
 import MapBackground from "../Components/MapBackground";
 import MenuBar from "../Components/MenuBarFolder/MenuBar";
 import AppLayout from "../Layout/AppLayout";
 import PositionedElementsRenderer from "@/components/PositionedElementsRenderer";
 import AdminClicker from "@/components/AdminClicker";
+import NodePathRenderer from "@/components/NodePathRenderer";
+import RoomEditor from "@/components/RoomEditor";
+import { useDeleteKey } from "@/hooks/useDeleteKey";
+import Courtyard from "@/components/Courtyard";
+import Scenery from "@/components/Scenery";
+import SceneryEditor from "@/components/SceneryEditor";
+import CustomBuildingRenderer from "@/components/CustomBuildingRenderer";
+import CustomBuildingEditor from "@/components/CustomBuildingEditor";
 
 const BeaconRenderer = lazy(() => import("@/components/BeaconRenderer"));
 
@@ -19,12 +29,29 @@ export default function MainPage() {
   // --- СТАН АДМІН-КЛІКЕРА ---
   const [nodes, setNodes] = useState<{ id: string; x: number; y: number; floor: number; roomId?: string }[]>(mapNodes);
   const [edges, setEdges] = useState<{ from: string; to: string; floor: number }[]>(mapEdges);
-  const [mode, setMode] = useState<'off' | 'nodes' | 'edges'>('off');
+  const [mode, setMode] = useState<'off' | 'nodes' | 'edges' | 'rooms' | 'delnode' | 'scenery' | 'building'>('off');
   const [currentRoomId, setCurrentRoomId] = useState('');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
   const [isPanelVisible, setIsPanelVisible] = useState(true);
   const [mapScale, setMapScale] = useState(1);
+  const [nodePath, setNodePath] = useState<PathResult | null>(null);
+  const [showNodes, setShowNodes] = useState(true);
+
+  useEffect(() => {
+    routeService.setGraph(nodes, edges);
+  }, [nodes, edges]);
+
+  useEffect(() => {
+    return routeService.onRoutesChange((routes) => {
+      if (routes.length === 0) {
+        setNodePath(null);
+        return;
+      }
+
+      setNodePath(routes[0].nodePath ?? null);
+    });
+  }, []);
 
   // --- ЛОГІКА АДМІН-КЛІКЕРА ---
   const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -58,20 +85,37 @@ export default function MainPage() {
 
   const handleNodeClick = (nodeId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (mode === 'delnode') {
+      setNodes(prev => prev.filter(n => n.id !== nodeId));
+      setEdges(prev => prev.filter(ed => ed.from !== nodeId && ed.to !== nodeId));
+      setSelectedNodeId(null);
+      return;
+    }
     if (mode !== 'edges') return;
     if (!selectedNodeId) {
       setSelectedNodeId(nodeId);
     } else {
       if (selectedNodeId !== nodeId) {
-        const edgeExists = edges.some(edge => 
-          (edge.from === selectedNodeId && edge.to === nodeId) || 
-          (edge.from === nodeId && edge.to === selectedNodeId)
-        );
-        if (!edgeExists) setEdges([...edges, { from: selectedNodeId, to: nodeId, floor: activeFloor }]);
+        const idx = edges.findIndex(edge =>
+          (edge.from === selectedNodeId && edge.to === nodeId) ||
+          (edge.from === nodeId && edge.to === selectedNodeId));
+        if (idx >= 0) {
+          setEdges(prev => prev.filter((_, i) => i !== idx)); // роз'єднати
+        } else {
+          setEdges([...edges, { from: selectedNodeId, to: nodeId, floor: activeFloor }]);
+        }
       }
       setSelectedNodeId(null);
     }
   };
+
+  const deleteSelectedNode = () => {
+    if (!selectedNodeId) return;
+    setNodes(prev => prev.filter(n => n.id !== selectedNodeId));
+    setEdges(prev => prev.filter(ed => ed.from !== selectedNodeId && ed.to !== selectedNodeId));
+    setSelectedNodeId(null);
+  };
+  useDeleteKey(selectedNodeId, deleteSelectedNode);
 
   const copyNodes = () => {
     navigator.clipboard.writeText(`export const mapNodes = ${JSON.stringify(nodes, null, 2)};`);
@@ -102,19 +146,31 @@ export default function MainPage() {
         wheel={{ step: 0.015, wheelDisabled: false }}
         panning={{ disabled: mode !== 'off' }}
       >
-        {({ state }) => (
+        {() => (
           <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh', overflow: 'hidden', backgroundColor: '#ffffff' }}>
             <div style={{ position: 'relative', width: `${MAP_WIDTH}px`, height: `${MAP_HEIGHT}px`, willChange: 'transform', transform: 'translate3d(0, 0, 0)', backfaceVisibility: 'hidden' }}>
               
               <MapBackground activeFloor={activeFloor} />
 
-              <PositionedElementsRenderer mapTransform={{ scale: 1, x: 0, y: 0 }} activeFloor={activeFloor} />
+              {activeFloor === 1 && <Courtyard />}
+              {activeFloor === 1 && mode !== 'scenery' && <Scenery />}
+              {mode === 'scenery' && <SceneryEditor mapScale={mapScale} />}
+              {activeFloor === 1 && mode !== 'building' && <CustomBuildingRenderer floor={1} />}
+              {mode === 'building' && <CustomBuildingEditor mapScale={mapScale} />}
+
+              {mode !== 'rooms' && (
+                <PositionedElementsRenderer mapTransform={{ scale: 1, x: 0, y: 0 }} activeFloor={activeFloor} />
+              )}
+
+              <NodePathRenderer path={nodePath} activeFloor={activeFloor} onFloorChange={setActiveFloor} fallbackLine={null} />
+
+              {mode === 'rooms' && <RoomEditor activeFloor={activeFloor} mapScale={mapScale} />}
               
               <AdminClicker 
                 mapTransform={{ scale: 1, x: 0, y: 0 }} 
                 activeFloor={activeFloor}
                 nodes={nodes} edges={edges} mode={mode} currentRoomId={currentRoomId}
-                selectedNodeId={selectedNodeId} draggingNodeId={draggingNodeId}
+                selectedNodeId={selectedNodeId} draggingNodeId={draggingNodeId} showNodes={showNodes}
                 onMapClick={handleMapClick} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}
                 onNodeMouseDown={handleNodeMouseDown} onNodeClick={handleNodeClick}
               />
@@ -146,6 +202,14 @@ export default function MainPage() {
             <button onClick={() => { setMode('off'); setSelectedNodeId(null); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'off' ? '#444' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>📱 Рухати мапу</button>
             <button onClick={() => { setMode('nodes'); setSelectedNodeId(null); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'nodes' ? '#28a745' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>📍 Додавати Вузли</button>
             <button onClick={() => setMode('edges')} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'edges' ? '#007bff' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>🔗 З'єднувати Зв’язки</button>
+            <button onClick={() => { setMode('delnode'); setSelectedNodeId(null); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'delnode' ? '#dc3545' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>🗑 Видаляти вузли</button>
+            <button onClick={() => { setMode(mode === 'scenery' ? 'off' : 'scenery'); setSelectedNodeId(null); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'scenery' ? '#2f6f4f' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>🏗 Двір/будівлі</button>
+            <button onClick={() => { setMode(mode === 'building' ? 'off' : 'building'); setSelectedNodeId(null); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'building' ? '#6f42c1' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>🏛 Конструктор будівель</button>
+            <button onClick={() => { setMode(mode === 'rooms' ? 'off' : 'rooms'); setSelectedNodeId(null); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'rooms' ? '#ff9800' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>✏️ Редагувати аудиторії</button>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: '#222', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', border: '1px solid #444' }}>
+              <input type="checkbox" checked={!showNodes} onChange={(e) => setShowNodes(!e.target.checked)} />
+              👁 Сховати вузли (перевірити маршрут)
+            </label>
           </div>
 
           {mode === 'nodes' && (
@@ -169,7 +233,6 @@ export default function MainPage() {
         </div>
       )}
 
-      {/* Головне меню */}
       <MenuBar activeFloor={activeFloor} onFloorChange={setActiveFloor} />
     </AppLayout>
   );

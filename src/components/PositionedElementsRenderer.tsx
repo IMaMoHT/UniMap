@@ -22,6 +22,7 @@ type Language = 'Ukrainian' | 'English';
 const PRIMARY_COLOR = '#39A39B';
 const PRIMARY_BORDER_COLOR = '#2d8a84';
 const DEFAULT_HIGHLIGHT_COLOR = '#9BEF8B';
+const ROOM_FILL_ALPHA = 0.5;
 
 const calculateResponsiveFontSize = (
   text: string | number | undefined,
@@ -88,6 +89,11 @@ const parseColorToRgb = (color: string): { r: number; g: number; b: number } | n
   }
 
   return null;
+};
+
+const toSemiTransparent = (color: string, alpha: number): string => {
+  const rgb = parseColorToRgb(color);
+  return rgb ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})` : color;
 };
 
 const buildHighlightVars = (color: string): React.CSSProperties => {
@@ -268,6 +274,7 @@ const RoomElement = React.memo(
               src={room.resolvedImgSrc}
               alt={room.id}
               className="positioned-element__img"
+              style={{ transform: `translate(-50%, -50%) rotate(${-(room.rotation || 0)}deg)` }}
             />
           )}
         </div>
@@ -348,7 +355,7 @@ export const PositionedElementsRenderer: React.FC<PositionedElementsRendererProp
       };
 
       const baseCardStyle: React.CSSProperties = {
-        background: squareConfig.color || PRIMARY_COLOR,
+        background: toSemiTransparent(squareConfig.color || PRIMARY_COLOR, ROOM_FILL_ALPHA),
         border: `${squareConfig.borderWidth || 2}px solid ${squareConfig.borderColor || PRIMARY_BORDER_COLOR}`,
         borderRadius: `${squareConfig.borderRadius || 8}px`,
         color: squareConfig.fontColor || '#ffffff',

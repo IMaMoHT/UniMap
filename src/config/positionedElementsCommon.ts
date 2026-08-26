@@ -49,6 +49,7 @@ export interface CreateRoomParams {
   width: number;
   height: number;
   number?: number;
+  imgSrc?: string;
   rotation?: number;
   category?: RoomCategory;
   corridor: number;
@@ -122,6 +123,10 @@ export function createRoom(params: CreateRoomParams): PositionedElementConfig {
   // Normalize id for all regular numbered rooms to "�?���+�-�?��' {number}"
   if (category === 'regular' && typeof params.number === 'number') {
     room.id = `�?���+�-�?��' ${params.number}`;
+  }
+
+  if (params.imgSrc) {
+    room.imgSrc = params.imgSrc;
   }
 
   return room;

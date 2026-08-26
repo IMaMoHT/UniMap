@@ -1,0 +1,63 @@
+.fountain {
+  position: absolute;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 12;
+}
+
+/* concentric water ripples */
+.fountain__ripple {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: fountain-ripple 3.4s ease-out infinite;
+}
+.fountain__ripple--2 { animation-delay: 1.13s; }
+.fountain__ripple--3 { animation-delay: 2.26s; }
+@keyframes fountain-ripple {
+  0%   { transform: scale(0.30); opacity: 0.7; }
+  80%  { opacity: 0.10; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+/* arcing water streams from the top bowl */
+.fountain__stream {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: fountain-stream 1.8s linear infinite;
+}
+.fountain__stream--b { animation-delay: 0.3s; }
+.fountain__stream--c { animation-delay: 0.6s; }
+.fountain__stream--d { animation-delay: 0.9s; }
+.fountain__stream--e { animation-delay: 1.2s; }
+.fountain__stream--f { animation-delay: 1.5s; }
+@keyframes fountain-stream {
+  0%   { stroke-dashoffset: 60; opacity: 0; }
+  20%  { opacity: 0.9; }
+  100% { stroke-dashoffset: -20; opacity: 0; }
+}
+
+/* central vertical jet */
+.fountain__jet {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: fountain-jet 1.5s ease-in-out infinite;
+}
+@keyframes fountain-jet {
+  0%, 100% { transform: scaleY(0.65); opacity: 0.55; }
+  50%      { transform: scaleY(1.1); opacity: 0.95; }
+}
+
+/* falling droplets */
+.fountain__drop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: fountain-drop 1.5s ease-in-out infinite;
+}
+.fountain__drop--b { animation-delay: 0.5s; }
+.fountain__drop--c { animation-delay: 1.0s; }
+@keyframes fountain-drop {
+  0%   { transform: translateY(4px) scale(0.5); opacity: 0; }
+  30%  { opacity: 1; }
+  55%  { transform: translateY(-30px) scale(1); opacity: 1; }
+  100% { transform: translateY(6px) scale(0.4); opacity: 0; }
+}

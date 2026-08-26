@@ -1,0 +1,196 @@
+import React, { useState, Suspense, lazy, useEffect } from "react";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+
+import { MAP_WIDTH, MAP_HEIGHT } from "@/config/mapDimensions";
+import { mapNodes } from '@/config/mapNodes';
+import { mapEdges } from '@/config/mapEdges';
+import routeService from '@/services/RouteService';
+import type { PathResult } from '@/utils/pathfinding';
+
+import MapBackground from "../Components/MapBackground";
+import MenuBar from "../Components/MenuBarFolder/MenuBar";
+import AppLayout from "../Layout/AppLayout";
+import PositionedElementsRenderer from "@/components/PositionedElementsRenderer";
+import AdminClicker from "@/components/AdminClicker";
+import NodePathRenderer from "@/components/NodePathRenderer";
+
+const BeaconRenderer = lazy(() => import("@/components/BeaconRenderer"));
+
+export default function MainPage() {
+  const [activeFloor, setActiveFloor] = useState(1);
+  
+  // --- СТАН АДМІН-КЛІКЕРА ---
+  const [nodes, setNodes] = useState<{ id: string; x: number; y: number; floor: number; roomId?: string }[]>(mapNodes);
+  const [edges, setEdges] = useState<{ from: string; to: string; floor: number }[]>(mapEdges);
+  const [mode, setMode] = useState<'off' | 'nodes' | 'edges'>('off');
+  const [currentRoomId, setCurrentRoomId] = useState('');
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
+  const [isPanelVisible, setIsPanelVisible] = useState(true);
+  const [mapScale, setMapScale] = useState(1);
+  const [nodePath, setNodePath] = useState<PathResult | null>(null);
+
+  useEffect(() => {
+    routeService.setGraph(nodes, edges);
+  }, [nodes, edges]);
+
+  useEffect(() => {
+    return routeService.onRoutesChange((routes) => {
+      if (routes.length === 0) {
+        setNodePath(null);
+        return;
+      }
+
+      setNodePath(routes[0].nodePath ?? null);
+    });
+  }, []);
+
+  // --- ЛОГІКА АДМІН-КЛІКЕРА ---
+  const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (mode !== 'nodes' || draggingNodeId) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = Math.round((e.clientX - rect.left) / mapScale);
+    const y = Math.round((e.clientY - rect.top) / mapScale);
+    const newNode = {
+      id: `f${activeFloor}_node_${nodes.length + 1}`,
+      x, y, floor: activeFloor,
+      ...(currentRoomId.trim() ? { roomId: currentRoomId.trim() } : {})
+    };
+    setNodes([...nodes, newNode]);
+    setCurrentRoomId('');
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!draggingNodeId || mode !== 'nodes') return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = Math.round((e.clientX - rect.left) / mapScale);
+    const y = Math.round((e.clientY - rect.top) / mapScale);
+    setNodes(prev => prev.map(n => n.id === draggingNodeId ? { ...n, x, y } : n));
+  };
+
+  const handleMouseUp = () => setDraggingNodeId(null);
+
+  const handleNodeMouseDown = (nodeId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (mode === 'nodes') setDraggingNodeId(nodeId);
+  };
+
+  const handleNodeClick = (nodeId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (mode !== 'edges') return;
+    if (!selectedNodeId) {
+      setSelectedNodeId(nodeId);
+    } else {
+      if (selectedNodeId !== nodeId) {
+        const edgeExists = edges.some(edge => 
+          (edge.from === selectedNodeId && edge.to === nodeId) || 
+          (edge.from === nodeId && edge.to === selectedNodeId)
+        );
+        if (!edgeExists) setEdges([...edges, { from: selectedNodeId, to: nodeId, floor: activeFloor }]);
+      }
+      setSelectedNodeId(null);
+    }
+  };
+
+  const copyNodes = () => {
+    navigator.clipboard.writeText(`export const mapNodes = ${JSON.stringify(nodes, null, 2)};`);
+    alert('Вузли скопійовано!');
+  };
+
+  const copyEdges = () => {
+    navigator.clipboard.writeText(`export const mapEdges = ${JSON.stringify(edges, null, 2)};`);
+    alert('Зв’язки скопійовано!');
+  };
+
+  const clearLast = () => {
+    if (mode === 'nodes') setNodes(nodes.slice(0, -1));
+    else if (mode === 'edges') setEdges(edges.slice(0, -1));
+  };
+
+  return (
+    <AppLayout>
+      <TransformWrapper
+        initialScale={0.8}
+        minScale={0.4}
+        maxScale={1}
+        limitToBounds={true}
+        centerZoomedOut={false}
+        centerOnInit={true}
+        onTransform={(ref) => setMapScale(ref.state.scale)} // 👈 ВИПРАВЛЕНО НА onTransform
+        zoomAnimation={{ disabled: false, animationTime: 400, animationType: "easeOut" }}
+        wheel={{ step: 0.015, wheelDisabled: false }}
+        panning={{ disabled: mode !== 'off' }}
+      >
+        {({ state }) => (
+          <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh', overflow: 'hidden', backgroundColor: '#ffffff' }}>
+            <div style={{ position: 'relative', width: `${MAP_WIDTH}px`, height: `${MAP_HEIGHT}px`, willChange: 'transform', transform: 'translate3d(0, 0, 0)', backfaceVisibility: 'hidden' }}>
+              
+              <MapBackground activeFloor={activeFloor} />
+
+              <PositionedElementsRenderer mapTransform={{ scale: 1, x: 0, y: 0 }} activeFloor={activeFloor} />
+
+              <NodePathRenderer path={nodePath} activeFloor={activeFloor} onFloorChange={setActiveFloor} />
+              
+              <AdminClicker 
+                mapTransform={{ scale: 1, x: 0, y: 0 }} 
+                activeFloor={activeFloor}
+                nodes={nodes} edges={edges} mode={mode} currentRoomId={currentRoomId}
+                selectedNodeId={selectedNodeId} draggingNodeId={draggingNodeId}
+                onMapClick={handleMapClick} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}
+                onNodeMouseDown={handleNodeMouseDown} onNodeClick={handleNodeClick}
+              />
+              
+              <Suspense fallback={null}>
+                <BeaconRenderer mapTransform={{ scale: 1, x: 0, y: 0 }} showBeacons={false} />
+              </Suspense>
+
+            </div>
+          </TransformComponent>
+        )}
+      </TransformWrapper>
+
+      {/* --- АДМІН-ПАНЕЛЬ --- */}
+      {!isPanelVisible && (
+        <button onClick={() => setIsPanelVisible(true)} style={{ position: 'fixed', top: 20, left: 20, zIndex: 1000, background: '#222', color: '#00ff00', padding: '12px 20px', border: '2px solid #333', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+          🛠 Відкрити адмін-панель
+        </button>
+      )}
+
+      {isPanelVisible && (
+        <div style={{ position: 'fixed', top: 0, left: 0, bottom: 0, width: '320px', zIndex: 1000, background: '#1a1a1a', borderRight: '1px solid #333', boxShadow: '4px 0 15px rgba(0,0,0,0.5)', color: 'white', padding: '20px', display: 'flex', flexDirection: 'column', overflowY: 'auto', fontFamily: 'sans-serif' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>
+            <h3 style={{ margin: 0, color: '#00ff00', fontSize: '18px' }}>🛠 Адмін-панель</h3>
+            <button onClick={() => setIsPanelVisible(false)} style={{ background: '#333', border: 'none', color: 'white', cursor: 'pointer', fontSize: '14px', padding: '5px 10px', borderRadius: '4px' }}>Сховати</button>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+            <button onClick={() => { setMode('off'); setSelectedNodeId(null); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'off' ? '#444' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>📱 Рухати мапу</button>
+            <button onClick={() => { setMode('nodes'); setSelectedNodeId(null); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'nodes' ? '#28a745' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>📍 Додавати Вузли</button>
+            <button onClick={() => setMode('edges')} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'edges' ? '#007bff' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>🔗 З'єднувати Зв’язки</button>
+          </div>
+
+          {mode === 'nodes' && (
+            <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '5px', background: '#222', padding: '10px', borderRadius: '6px' }}>
+              <label style={{ fontSize: '13px', color: '#aaa' }}>ID аудиторії (опціонально):</label>
+              <input type="text" value={currentRoomId} onChange={(e) => setCurrentRoomId(e.target.value)} placeholder="Напр. 12 або 204" style={{ padding: '8px', borderRadius: '4px', border: '1px solid #444', background: '#111', color: '#fff' }} />
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+            <button onClick={mode === 'edges' ? copyEdges : copyNodes} style={{ flex: 1, padding: '10px', background: '#17a2b8', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '6px', fontWeight: 'bold' }}>📋 Копіювати код</button>
+            <button onClick={clearLast} style={{ padding: '10px', background: '#dc3545', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '6px', fontWeight: 'bold' }}>↩️ Скасувати</button>
+          </div>
+
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <label style={{ fontSize: '13px', color: '#aaa', marginBottom: '5px' }}>Згенерований код (JSON):</label>
+            <pre style={{ flex: 1, background: '#0a0a0a', padding: '10px', borderRadius: '6px', border: '1px solid #333', overflowY: 'auto', fontSize: '12px', color: '#00ff00', margin: 0 }}>
+              {JSON.stringify(mode === 'edges' ? edges : nodes, null, 2)}
+            </pre>
+          </div>
+        </div>
+      )}
+
+      <MenuBar activeFloor={activeFloor} onFloorChange={setActiveFloor} />
+    </AppLayout>
+  );
+}

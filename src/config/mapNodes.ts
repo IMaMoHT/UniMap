@@ -283,8 +283,8 @@ export const mapNodes = [
   },
   {
     "id": "f1_node_48",
-    "x": 737,
-    "y": 786,
+    "x": 719,
+    "y": 807,
     "floor": 1
   },
   {
@@ -1813,5 +1813,143 @@ export const mapNodes = [
     "y": 2842,
     "floor": 2,
     "roomId": "conferencezal"
+  },
+  {
+    "id": "f1_node_284",
+    "x": 733,
+    "y": 1534,
+    "floor": 1,
+    "roomId": "stairsmain1"
+  },
+  {
+    "id": "f2_node_285",
+    "x": 729,
+    "y": 1530,
+    "floor": 2,
+    "roomId": "stairsmain2"
+  },
+  {
+    "id": "f3_node_286",
+    "x": 732,
+    "y": 1528,
+    "floor": 3,
+    "roomId": "stairsmain3"
+  },
+  {
+    "id": "f3_node_287",
+    "x": 703,
+    "y": 3153,
+    "floor": 3,
+    "roomId": "stairsactova3"
+  },
+  {
+    "id": "f3_node_288",
+    "x": 839,
+    "y": 3102,
+    "floor": 3
+  },
+  {
+    "id": "f3_node_289",
+    "x": 914,
+    "y": 2983,
+    "floor": 3
+  },
+  {
+    "id": "f3_node_290",
+    "x": 1000,
+    "y": 2958,
+    "floor": 3
+  },
+  {
+    "id": "f3_node_291",
+    "x": 1147,
+    "y": 2969,
+    "floor": 3
+  },
+  {
+    "id": "f2_node_292",
+    "x": 700,
+    "y": 3163,
+    "floor": 2,
+    "roomId": "stairsactova2"
+  },
+  {
+    "id": "f1_node_293",
+    "x": 646,
+    "y": 3171,
+    "floor": 1,
+    "roomId": "stairsactova1"
+  },
+  {
+    "id": "f1_node_294",
+    "x": 732,
+    "y": 3145,
+    "floor": 1
+  },
+  {
+    "id": "f1_node_295",
+    "x": 725,
+    "y": 3101,
+    "floor": 1
+  },
+  {
+    "id": "f1_node_296",
+    "x": 830,
+    "y": 3064,
+    "floor": 1
+  },
+  {
+    "id": "f1_node_297",
+    "x": 1204,
+    "y": 3015,
+    "floor": 1,
+    "roomId": "stairsvip"
+  },
+  {
+    "id": "f1_node_298",
+    "x": 739,
+    "y": 807,
+    "floor": 1,
+    "roomId": "stairsagro1"
+  },
+  {
+    "id": "f3_node_299",
+    "x": 522,
+    "y": 1100,
+    "floor": 3,
+    "roomId": "stairseconomtoilat3"
+  },
+  {
+    "id": "f1_node_300",
+    "x": 848,
+    "y": 3074,
+    "floor": 1,
+    "roomId": "museum"
+  },
+  {
+    "id": "f1_node_301",
+    "x": 650,
+    "y": 3119,
+    "floor": 1
+  },
+  {
+    "id": "f1_node_302",
+    "x": 628,
+    "y": 3039,
+    "floor": 1,
+    "roomId": "63"
+  },
+  {
+    "id": "f1_node_303",
+    "x": 639,
+    "y": 3075,
+    "floor": 1
+  },
+  {
+    "id": "f1_node_304",
+    "x": 612,
+    "y": 3076,
+    "floor": 1,
+    "roomId": "64"
   }
 ];

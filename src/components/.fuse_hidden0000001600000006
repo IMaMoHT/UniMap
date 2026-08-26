@@ -1,0 +1,110 @@
+.node-path-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 14;
+}
+
+.node-path-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+}
+
+/* White casing under the line for contrast against the map */
+.node-path__casing {
+  fill: none;
+  stroke: #ffffff;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Main brand-coloured route line */
+.node-path__line {
+  fill: none;
+  stroke: #39a39b;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Animated "flow" dashes that show walking direction */
+.node-path__flow {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 2 26;
+  animation: node-path-flow 0.9s linear infinite;
+}
+
+@keyframes node-path-flow {
+  to {
+    stroke-dashoffset: -28;
+  }
+}
+
+/* Start / destination markers */
+.node-path__start {
+  fill: #39a39b;
+  stroke: #ffffff;
+  stroke-width: 5;
+}
+
+.node-path__finish-ring {
+  fill: rgba(57, 163, 155, 0.25);
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: node-path-pulse 1.6s ease-out infinite;
+}
+
+.node-path__finish {
+  fill: #39a39b;
+  stroke: #ffffff;
+  stroke-width: 5;
+}
+
+@keyframes node-path-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+/* On-map "go to floor N" button anchored at a staircase */
+.floor-switch-btn {
+  position: absolute;
+  transform: translate(-50%, -120%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border: none;
+  border-radius: 100px;
+  background: #39a39b;
+  color: #ffffff;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.floor-switch-btn:hover {
+  background: #2d8a84;
+  transform: translate(-50%, -120%) scale(1.04);
+}
+
+.floor-switch-btn__icon {
+  font-size: 30px;
+  line-height: 1;
+}

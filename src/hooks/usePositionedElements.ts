@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { positionedElementsService, PositionedElementConfig } from '../services/PositionedElementsService';
+import { positionedElementsService, type PositionedElementConfig } from '../services/PositionedElementsService';
 
 export const usePositionedElements = () => {
   const addElement = useCallback((config: PositionedElementConfig) => {
