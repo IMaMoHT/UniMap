@@ -3,6 +3,8 @@ import type { BeaconRoute } from './BeaconRouteService';
 import beaconRouteService from './BeaconRouteService';
 import {
   dijkstra,
+  sanitizeEdges,
+  sanitizeNodes,
   type MapEdge,
   type MapNode,
   type PathResult,
@@ -37,12 +39,28 @@ export interface Route {
 class RouteService {
   private routes: Route[] = [];
   private listeners: ((routes: Route[]) => void)[] = [];
-  private graphNodes: MapNode[] = defaultMapNodes as MapNode[];
-  private graphEdges: MapEdge[] = defaultMapEdges as MapEdge[];
+  private graphNodes: MapNode[] = sanitizeNodes(defaultMapNodes);
+  private graphEdges: MapEdge[] = sanitizeEdges(defaultMapEdges, sanitizeNodes(defaultMapNodes));
+  /** Кеш «вузли, що мають хоча б одне ребро» — інвалідується у setGraph */
+  private connectedNodeIds: Set<string> | null = null;
 
   setGraph(nodes: MapNode[], edges: MapEdge[]) {
-    this.graphNodes = nodes;
-    this.graphEdges = edges;
+    // Граф приходить з адмін-панелі, тож може містити «сміття» після ручних правок
+    this.graphNodes = sanitizeNodes(nodes);
+    this.graphEdges = sanitizeEdges(edges, this.graphNodes);
+    this.connectedNodeIds = null;
+  }
+
+  private getConnectedNodeIds(): Set<string> {
+    if (!this.connectedNodeIds) {
+      const connected = new Set<string>();
+      for (const edge of this.graphEdges) {
+        connected.add(edge.from);
+        connected.add(edge.to);
+      }
+      this.connectedNodeIds = connected;
+    }
+    return this.connectedNodeIds;
   }
 
   // Resolve a room (from the visual config) to a graph node.
@@ -52,11 +70,7 @@ class RouteService {
     if (this.graphNodes.length === 0) return null;
 
     // only nodes that participate in at least one edge can be routed
-    const connected = new Set<string>();
-    for (const edge of this.graphEdges) {
-      connected.add(edge.from);
-      connected.add(edge.to);
-    }
+    const connected = this.getConnectedNodeIds();
 
     const floor = room.floor ?? 1;
     const floorNodes = this.graphNodes.filter(
@@ -64,11 +78,17 @@ class RouteService {
     );
     if (floorNodes.length === 0) return null;
 
+    // 1) точний збіг за id кімнати — працює і для іменованих приміщень
+    const byRoomId = floorNodes.find((node) => node.roomId === room.id);
+    if (byRoomId) return byRoomId;
+
+    // 2) збіг за номером кабінету
     if (typeof room.number === 'number') {
       const byNumber = floorNodes.find((node) => node.roomId === String(room.number));
       if (byNumber) return byNumber;
     }
 
+    // 3) найближчий підключений вузол на тому ж поверсі
     const center = this.getRoomCenter(room);
     let nearest: MapNode | null = null;
     let bestDistance = Infinity;
@@ -346,9 +366,16 @@ class RouteService {
     };
   }
 
-  // Уведомление слушателей об изменениях
+  // Сповіщення слухачів. Виняток в одному підписнику не має ламати решту.
   private emit() {
-    this.listeners.forEach(callback => callback([...this.routes]));
+    const snapshot = [...this.routes];
+    for (const callback of [...this.listeners]) {
+      try {
+        callback(snapshot);
+      } catch (error) {
+        console.error('RouteService: помилка в підписнику onRoutesChange', error);
+      }
+    }
   }
 
   // Найти середину стороны комнаты (верхней или нижней)
@@ -397,21 +424,29 @@ class RouteService {
 
   // Построить маршрут между двумя комнатами
   buildRoute(fromRoomId: string, toRoomId: string, rooms: PositionedElementConfig[]): Route | null {
-    
+    if (!fromRoomId || !toRoomId || fromRoomId === toRoomId || !Array.isArray(rooms)) {
+      return null;
+    }
+
     const fromRoom = rooms.find(room => room.id === fromRoomId);
     const toRoom = rooms.find(room => room.id === toRoomId);
 
     if (!fromRoom || !toRoom) {
-      console.warn('RouteService: Комната не найдена:', { fromRoomId, toRoomId });
+      console.warn('RouteService: кімнату не знайдено:', { fromRoomId, toRoomId });
       return null;
     }
 
-
-    const fromNode = this.resolveRoomNode(fromRoom);
-    const toNode = this.resolveRoomNode(toRoom);
-    const nodePath = fromNode && toNode
-      ? dijkstra(fromNode.id, toNode.id, this.graphNodes, this.graphEdges)
-      : null;
+    let nodePath: PathResult | null = null;
+    try {
+      const fromNode = this.resolveRoomNode(fromRoom);
+      const toNode = this.resolveRoomNode(toRoom);
+      nodePath = fromNode && toNode
+        ? dijkstra(fromNode.id, toNode.id, this.graphNodes, this.graphEdges)
+        : null;
+    } catch (error) {
+      console.error('RouteService: збій пошуку шляху по графу', error);
+      nodePath = null;
+    }
 
     // Пытаемся построить маршрут через маяки
     let beaconRoute: BeaconRoute | null = null;

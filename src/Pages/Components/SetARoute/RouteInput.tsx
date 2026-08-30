@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import './RouteInput.css';
 import Button from '../UI/Button';
-import { regularRooms } from '../../../config/positionedElements';
-import squaresConfig from '../../../config/positionedElements';
+import { selectableRooms, selectableRoomsById, type SelectableRoom } from '../../../config/positionedElements';
+import { sanitizeText } from '../../../utils/sanitize';
 
 interface RouteInputProps {
   fromValue: string;
@@ -13,16 +13,10 @@ interface RouteInputProps {
 
 type Side = 'from' | 'to';
 
-const getCabinetDescription = (roomId: string): string => {
-  const sq = squaresConfig.find((s) => s.id === roomId);
-  const t = sq?.text as
-    | string
-    | { Ukrainian?: string; English?: string; OnDefault?: { Ukrainian?: string; English?: string } }
-    | undefined;
-  if (!t) return '';
-  if (typeof t === 'string') return t;
-  if (t.OnDefault) return t.OnDefault.Ukrainian || t.OnDefault.English || '';
-  return t.Ukrainian || t.English || '';
+const CATEGORY_BADGE: Record<string, string> = {
+  toilet: 'WC',
+  stairs: 'Сходи',
+  buffet: 'Буфет',
 };
 
 const RouteInput: React.FC<RouteInputProps> = ({ fromValue, toValue, onFromChange, onToChange }) => {
@@ -33,28 +27,28 @@ const RouteInput: React.FC<RouteInputProps> = ({ fromValue, toValue, onFromChang
   const fromRootRef = useRef<HTMLDivElement>(null);
   const toRootRef = useRef<HTMLDivElement>(null);
 
-  const getDisplayName = (roomId: string) => {
-    const room = regularRooms.find((r) => r.id === roomId);
-    return room ? `Кабінет ${room.number}` : 'Оберіть кабінет';
-  };
+  const getDisplayName = (roomId: string) =>
+    selectableRoomsById.get(roomId)?.label ?? 'Оберіть приміщення';
 
-  const filterRooms = (query: string) => {
-    const q = query.trim().toLowerCase();
-    if (!q) return regularRooms;
-    return regularRooms.filter((room) => {
-      const description = getCabinetDescription(room.id).toLowerCase();
-      return (
-        room.number.toString().includes(q) ||
+  /**
+   * Пошук по всіх приміщеннях (не лише нумерованих кабінетах).
+   * Запит санітизується — у фільтр не потрапляють керуючі символи.
+   */
+  const filterRooms = (query: string): SelectableRoom[] => {
+    const q = sanitizeText(query, 60).toLowerCase();
+    if (!q) return selectableRooms;
+    return selectableRooms.filter(
+      (room) =>
+        room.label.toLowerCase().includes(q) ||
         room.id.toLowerCase().includes(q) ||
-        description.includes(q)
-      );
-    });
+        (typeof room.number === 'number' && String(room.number).includes(q)),
+    );
   };
 
   const fromRooms = useMemo(() => filterRooms(fromQuery), [fromQuery]);
   const toRooms = useMemo(() => filterRooms(toQuery), [toQuery]);
 
-  // Close dropdowns on outside click.
+  // Закриття списків кліком поза ними + по Escape
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
       const target = e.target as Node;
@@ -62,13 +56,21 @@ const RouteInput: React.FC<RouteInputProps> = ({ fromValue, toValue, onFromChang
         setOpenSide(null);
       }
     };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenSide(null);
+    };
     document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
   }, []);
 
   const toggle = (side: Side) => setOpenSide((prev) => (prev === side ? null : side));
 
   const handleSelect = (side: Side, roomId: string) => {
+    if (!selectableRoomsById.has(roomId)) return; // ігноруємо невідомі id
     if (side === 'from') onFromChange(roomId);
     else onToChange(roomId);
     setOpenSide(null);
@@ -80,7 +82,7 @@ const RouteInput: React.FC<RouteInputProps> = ({ fromValue, toValue, onFromChang
     value: string,
     query: string,
     setQuery: (v: string) => void,
-    rooms: typeof regularRooms,
+    rooms: SelectableRoom[],
     rootRef: React.RefObject<HTMLDivElement | null>,
   ) => {
     const isOpen = openSide === side;
@@ -101,14 +103,15 @@ const RouteInput: React.FC<RouteInputProps> = ({ fromValue, toValue, onFromChang
             className="RouteSelector-search"
             type="text"
             value={query}
-            placeholder="Пошук за номером…"
+            placeholder="Пошук: номер або назва…"
             onChange={(e) => setQuery(e.target.value)}
             aria-label={`Пошук: ${label}`}
+            maxLength={60}
           />
           <ul className="RouteSelector-options" role="listbox">
             {rooms.length === 0 && <li className="RouteSelector-empty">Нічого не знайдено</li>}
             {rooms.map((room) => {
-              const description = getCabinetDescription(room.id);
+              const badge = CATEGORY_BADGE[room.category];
               return (
                 <li
                   key={room.id}
@@ -118,8 +121,8 @@ const RouteInput: React.FC<RouteInputProps> = ({ fromValue, toValue, onFromChang
                   onClick={() => handleSelect(side, room.id)}
                 >
                   <span className="RouteSelector-item__name">
-                    Кабінет {room.number}
-                    {description ? ` — ${description}` : ''}
+                    {room.label}
+                    {badge ? ` · ${badge}` : ''}
                   </span>
                   <span className="RouteSelector-item__floor">{room.floor} поверх</span>
                 </li>

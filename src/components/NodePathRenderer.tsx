@@ -1,126 +1,38 @@
 import { useMemo } from 'react';
-import type { MapNode, PathResult } from '@/utils/pathfinding';
+import type { PathResult } from '@/utils/pathfinding';
 import { MAP_HEIGHT, MAP_WIDTH } from '@/config/mapDimensions';
+import {
+  buildSmoothPath,
+  getFloorRuns,
+  getFloorTransitions,
+  sanitizePathNodes,
+} from '@/utils/routePath';
 import './NodePathRenderer.css';
-
-interface FallbackLine {
-  from: Point;
-  to: Point;
-  via?: Point[];
-}
 
 interface NodePathRendererProps {
   path: PathResult | null;
   activeFloor: number;
   onFloorChange?: (floor: number) => void;
-  fallbackLine?: FallbackLine | null;
 }
 
-interface Point {
-  x: number;
-  y: number;
-}
-
-interface FloorTransition {
-  nodeId: string;
-  at: Point;
-  targetFloor: number;
-}
-
-// Catmull-Rom style smoothing: turns a polyline into a rounded SVG path.
-function buildSmoothPath(points: Point[]): string {
-  if (points.length < 2) return '';
-  if (points.length === 2) {
-    return `M ${points[0].x},${points[0].y} L ${points[1].x},${points[1].y}`;
-  }
-
-  const tension = 0.18;
-  const commands = [`M ${points[0].x},${points[0].y}`];
-
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const p0 = points[i - 1] ?? points[i];
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const p3 = points[i + 2] ?? p2;
-
-    const c1x = p1.x + (p2.x - p0.x) * tension;
-    const c1y = p1.y + (p2.y - p0.y) * tension;
-    const c2x = p2.x - (p3.x - p1.x) * tension;
-    const c2y = p2.y - (p3.y - p1.y) * tension;
-
-    commands.push(`C ${c1x},${c1y} ${c2x},${c2y} ${p2.x},${p2.y}`);
-  }
-
-  return commands.join(' ');
-}
-
-// Split the full path into contiguous runs that stay on the active floor,
-// so the line is "cut" at staircases instead of jumping across floors.
-function getFloorRuns(nodes: MapNode[], activeFloor: number): Point[][] {
-  const runs: Point[][] = [];
-  let current: Point[] = [];
-
-  for (const node of nodes) {
-    if (node.floor === activeFloor) {
-      current.push({ x: node.x, y: node.y });
-    } else if (current.length > 0) {
-      runs.push(current);
-      current = [];
-    }
-  }
-
-  if (current.length > 0) runs.push(current);
-  return runs;
-}
-
-// Find staircases on the active floor where the route continues to another floor.
-function getFloorTransitions(nodes: MapNode[], activeFloor: number): FloorTransition[] {
-  const transitions: FloorTransition[] = [];
-  const seen = new Set<string>();
-
-  for (let i = 0; i < nodes.length - 1; i += 1) {
-    const a = nodes[i];
-    const b = nodes[i + 1];
-    if (a.floor === b.floor) continue;
-
-    const anchor = a.floor === activeFloor ? a : b.floor === activeFloor ? b : null;
-    if (!anchor || seen.has(anchor.id)) continue;
-    const targetFloor = anchor === a ? b.floor : a.floor;
-
-    seen.add(anchor.id);
-    transitions.push({ nodeId: anchor.id, at: { x: anchor.x, y: anchor.y }, targetFloor });
-  }
-
-  return transitions;
-}
-
-export default function NodePathRenderer({ path, activeFloor, onFloorChange, fallbackLine }: NodePathRendererProps) {
-  const nodes = path?.nodes ?? [];
+export default function NodePathRenderer({ path, activeFloor, onFloorChange }: NodePathRendererProps) {
+  // Биті вузли не мають ламати рендер усієї карти
+  const nodes = useMemo(() => sanitizePathNodes(path?.nodes), [path]);
 
   const runs = useMemo(() => getFloorRuns(nodes, activeFloor), [nodes, activeFloor]);
   const transitions = useMemo(() => getFloorTransitions(nodes, activeFloor), [nodes, activeFloor]);
 
-  const hasNodePath = Boolean(path && nodes.length >= 2 && (runs.length > 0 || transitions.length > 0));
-  const effectiveRuns: Point[][] = hasNodePath
-    ? runs
-    : fallbackLine
-      ? [[fallbackLine.from, ...(fallbackLine.via ?? []), fallbackLine.to]]
-      : [];
-  if (effectiveRuns.length === 0 && transitions.length === 0) return null;
+  if (runs.length === 0 && transitions.length === 0) return null;
 
   const firstNode = nodes[0];
   const lastNode = nodes[nodes.length - 1];
-  let startOnFloor = firstNode && firstNode.floor === activeFloor ? { x: firstNode.x, y: firstNode.y } : null;
-  let finishOnFloor = lastNode && lastNode.floor === activeFloor ? { x: lastNode.x, y: lastNode.y } : null;
-  if (!hasNodePath && fallbackLine) {
-    startOnFloor = fallbackLine.from;
-    finishOnFloor = fallbackLine.to;
-  }
+  const startOnFloor = firstNode && firstNode.floor === activeFloor ? { x: firstNode.x, y: firstNode.y } : null;
+  const finishOnFloor = lastNode && lastNode.floor === activeFloor ? { x: lastNode.x, y: lastNode.y } : null;
 
   return (
     <div className="node-path-layer" style={{ width: MAP_WIDTH, height: MAP_HEIGHT }}>
       <svg className="node-path-svg" width={MAP_WIDTH} height={MAP_HEIGHT}>
-        {effectiveRuns.map((run, index) => {
+        {runs.map((run, index) => {
           const d = buildSmoothPath(run);
           if (!d) return null;
           return (
@@ -144,16 +56,16 @@ export default function NodePathRenderer({ path, activeFloor, onFloorChange, fal
 
       {transitions.map((transition) => (
         <button
-          key={transition.nodeId}
+          key={`${transition.nodeId}:${transition.targetFloor}`}
           type="button"
-          className="floor-switch-btn"
+          className={`floor-switch-btn${transition.forward ? '' : ' floor-switch-btn--back'}`}
           style={{ left: transition.at.x, top: transition.at.y }}
           onClick={() => onFloorChange?.(transition.targetFloor)}
         >
           <span className="floor-switch-btn__icon" aria-hidden="true">
             {transition.targetFloor > activeFloor ? '↑' : '↓'}
           </span>
-          Перейти на {transition.targetFloor} поверх
+          {transition.forward ? 'Перейти на' : 'Повернутись на'} {transition.targetFloor} поверх
         </button>
       ))}
     </div>

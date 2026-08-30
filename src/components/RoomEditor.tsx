@@ -6,7 +6,12 @@ import { MAP_HEIGHT, MAP_WIDTH } from '../config/mapDimensions';
 import { useDragMove } from '../hooks/useDragMove';
 import { useDeleteKey } from '../hooks/useDeleteKey';
 
-type Room = PositionedElementConfig & { _uid: string };
+// ДОДАНО: властивості hiddenName та iconEmoji
+type Room = PositionedElementConfig & { 
+  _uid: string; 
+  hiddenName?: string; 
+  iconEmoji?: string; 
+};
 
 interface RoomEditorProps {
   activeFloor: number;
@@ -57,6 +62,9 @@ function buildCode(rooms: Room[], floor: number): string {
         r.rotation ? `        rotation: ${Math.round(r.rotation)},` : '',
         `        corridor: ${r.corridor ?? 1},`,
         `        text: { OnDefault: { Ukrainian: ${JSON.stringify(name)}, English: ${JSON.stringify(name)} } },`,
+        // ДОДАНО: Експорт нових властивостей у JSON
+        r.hiddenName ? `        hiddenName: ${JSON.stringify(r.hiddenName)},` : '',
+        r.iconEmoji ? `        iconEmoji: ${JSON.stringify(r.iconEmoji)},` : '',
         r.imgSrc ? `        imgSrc: '${r.imgSrc}',` : '',
         `        styleOverrides: { color: '${r.color ?? '#39A39B'}', borderColor: '${r.borderColor ?? '#2d8a84'}' },`,
       ].filter(Boolean);
@@ -149,9 +157,20 @@ export default function RoomEditor({ activeFloor, mapScale }: RoomEditorProps) {
       {selected && (
         <div style={{ borderTop: '1px solid #333', paddingTop: 12 }}>
           <div style={rowStyle}>
-            <span style={labelStyle}>Назва</span>
+            <span style={labelStyle}>Основна назва</span>
             <input style={inputStyle} value={labelOf(selected)} onChange={(e) => rename(selected._uid, e.target.value)} />
           </div>
+          
+          {/* ДОДАНО: Скрита назва та Емодзі-іконка */}
+          <div style={rowStyle}>
+            <span style={labelStyle}>Скрита назва (синоніми)</span>
+            <input style={inputStyle} placeholder="Напр. деканат, кафедра..." value={selected.hiddenName ?? ''} onChange={(e) => patch(selected._uid, { hiddenName: e.target.value })} />
+          </div>
+          <div style={rowStyle}>
+            <span style={labelStyle}>Емодзі-іконка (в текст)</span>
+            <input style={inputStyle} placeholder="Напр. 💻, ☕️, 🚪" value={selected.iconEmoji ?? ''} onChange={(e) => patch(selected._uid, { iconEmoji: e.target.value })} />
+          </div>
+
           <div style={{ display: 'flex', gap: 8 }}>
             <div style={{ ...rowStyle, flex: 1 }}>
               <span style={labelStyle}>Ширина</span>
@@ -173,7 +192,7 @@ export default function RoomEditor({ activeFloor, mapScale }: RoomEditorProps) {
             </div>
           </div>
           <div style={rowStyle}>
-            <span style={labelStyle}>Накласти іконку</span>
+            <span style={labelStyle}>Накласти SVG іконку</span>
             <select style={inputStyle} value={selected.imgSrc ?? ''} onChange={(e) => patch(selected._uid, { imgSrc: e.target.value || undefined })}>
               {ICON_OPTIONS.map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
             </select>
@@ -224,7 +243,12 @@ export default function RoomEditor({ activeFloor, mapScale }: RoomEditorProps) {
                 fontFamily: 'Inter, sans-serif', userSelect: 'none', overflow: 'hidden',
               }}
             >
-              <span style={{ padding: 4, textAlign: 'center', lineHeight: 1.1 }}>{labelOf(r)}</span>
+              {/* ДОДАНО: Відображення емодзі-іконки над основною назвою */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                {r.iconEmoji && <span style={{ fontSize: 26, lineHeight: 1.2 }}>{r.iconEmoji}</span>}
+                <span style={{ padding: 4, textAlign: 'center', lineHeight: 1.1 }}>{labelOf(r)}</span>
+              </div>
+              
               {r.imgSrc && (
                 <img src={r.imgSrc} alt="" style={{ position: 'absolute', top: '50%', left: '50%', width: '65%', height: '65%', objectFit: 'contain', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }} />
               )}

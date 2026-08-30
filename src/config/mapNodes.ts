@@ -840,12 +840,6 @@ export const mapNodes = [
     "floor": 3
   },
   {
-    "id": "f3_node_141",
-    "x": 549,
-    "y": 1099,
-    "floor": 3
-  },
-  {
     "id": "f3_node_142",
     "x": 634,
     "y": 818,
@@ -1357,7 +1351,7 @@ export const mapNodes = [
     "x": 2615,
     "y": 1747,
     "floor": 1,
-    "roomId": "stairslibrary"
+    "roomId": "Евукуаційний вихід 1 поверх"
   },
   {
     "id": "f2_node_219",
@@ -1504,7 +1498,7 @@ export const mapNodes = [
     "x": 2617,
     "y": 1749,
     "floor": 2,
-    "roomId": "stairsagro2floor"
+    "roomId": "Евукуаційний вихід 2 поверх"
   },
   {
     "id": "f2_node_240",
@@ -1623,7 +1617,7 @@ export const mapNodes = [
     "x": 2615,
     "y": 1745,
     "floor": 3,
-    "roomId": "stairsgolub"
+    "roomId": "Евукуаційний вихід 3 поверх"
   },
   {
     "id": "f3_node_257",
@@ -1652,13 +1646,6 @@ export const mapNodes = [
     "y": 3011,
     "floor": 3,
     "roomId": "44"
-  },
-  {
-    "id": "f3_node_261",
-    "x": 1305,
-    "y": 3013,
-    "floor": 3,
-    "roomId": "45"
   },
   {
     "id": "f3_node_262",
@@ -1899,25 +1886,11 @@ export const mapNodes = [
     "floor": 1
   },
   {
-    "id": "f1_node_297",
-    "x": 1204,
-    "y": 3015,
-    "floor": 1,
-    "roomId": "stairsvip"
-  },
-  {
     "id": "f1_node_298",
     "x": 739,
     "y": 807,
     "floor": 1,
     "roomId": "stairsagro1"
-  },
-  {
-    "id": "f3_node_299",
-    "x": 522,
-    "y": 1100,
-    "floor": 3,
-    "roomId": "stairseconomtoilat3"
   },
   {
     "id": "f1_node_300",
@@ -1951,5 +1924,220 @@ export const mapNodes = [
     "y": 3076,
     "floor": 1,
     "roomId": "64"
+  },
+  {
+    "id": "f1_node_306",
+    "x": 2234,
+    "y": 2469,
+    "floor": 1
+  },
+  {
+    "id": "f1_node_307",
+    "x": 2109,
+    "y": 2392,
+    "floor": 1
+  },
+  {
+    "id": "f1_node_308",
+    "x": 2210,
+    "y": 1969,
+    "floor": 1
+  },
+  {
+    "id": "f1_node_309",
+    "x": 2353,
+    "y": 1382,
+    "floor": 1
+  },
+  {
+    "id": "f1_node_310",
+    "x": 2403,
+    "y": 1149,
+    "floor": 1
+  },
+  {
+    "id": "f1_node_311",
+    "x": 935,
+    "y": 1607,
+    "floor": 1
+  },
+  {
+    "id": "f1_node_312",
+    "x": 923,
+    "y": 1479,
+    "floor": 1
+  },
+  {
+    "id": "f1_node_313",
+    "x": 1525,
+    "y": 1279,
+    "floor": 1
+  },
+  {
+    "id": "f1_node_314",
+    "x": 1585,
+    "y": 1159,
+    "floor": 1
+  },
+  {
+    "id": "f1_node_315",
+    "x": 1668,
+    "y": 1097,
+    "floor": 1
+  },
+  {
+    "id": "f1_node_316",
+    "x": 1733,
+    "y": 1087,
+    "floor": 1
+  },
+  {
+    "id": "f1_node_317",
+    "x": 1810,
+    "y": 1107,
+    "floor": 1
+  },
+  {
+    "id": "f1_node_318",
+    "x": 1875,
+    "y": 1199,
+    "floor": 1,
+    "roomId": "fountain1"
+  },
+  {
+    "id": "f1_node_319",
+    "x": 1558,
+    "y": 1269,
+    "floor": 1,
+    "roomId": "fountain2"
+  },
+  {
+    "id": "f2_node_320",
+    "x": 2295,
+    "y": 2656,
+    "floor": 2,
+    "roomId": "stairsrectorat3"
+  },
+  {
+    "id": "f2_node_321",
+    "x": 2414,
+    "y": 2529,
+    "floor": 2,
+    "roomId": "stairsrectorat4"
+  },
+  {
+    "id": "f1_node_322",
+    "x": 2777,
+    "y": 2973,
+    "floor": 1,
+    "roomId": "vhid"
+  },
+  {
+    "id": "f3_node_322",
+    "x": 1653,
+    "y": 3002,
+    "floor": 3,
+    "roomId": "43"
+  },
+  {
+    "id": "f2_node_322",
+    "x": 635,
+    "y": 203,
+    "floor": 2
+  },
+  {
+    "id": "f2_node_323",
+    "x": 498,
+    "y": 199,
+    "floor": 2
+  },
+  {
+    "id": "f2_node_324",
+    "x": 400,
+    "y": 195,
+    "floor": 2
+  },
+  {
+    "id": "f2_node_325",
+    "x": 395,
+    "y": 228,
+    "floor": 2,
+    "roomId": "ТУалет Агрономів 2 поверх"
+  },
+  {
+    "id": "f2_node_326",
+    "x": 477,
+    "y": 220,
+    "floor": 2,
+    "roomId": "Евукуаційний вихід Агрономів 2 поверх"
+  },
+  {
+    "id": "f3_node_327",
+    "x": 395,
+    "y": 225,
+    "floor": 3,
+    "roomId": "ТУалет Агрономів 3 поверх"
+  },
+  {
+    "id": "f3_node_330",
+    "x": 1307,
+    "y": 3007,
+    "floor": 3,
+    "roomId": "46"
+  },
+  {
+    "id": "f3_node_328",
+    "x": 1371,
+    "y": 3009,
+    "floor": 3,
+    "roomId": "45"
+  },
+  {
+    "id": "f3_node_329",
+    "x": 1213,
+    "y": 3015,
+    "floor": 3,
+    "roomId": "Евакуаційний вихід 3 поверх Садівництво"
+  },
+  {
+    "id": "f3_node_331",
+    "x": 1209,
+    "y": 2913,
+    "floor": 3,
+    "roomId": "49"
+  },
+  {
+    "id": "f3_node_332",
+    "x": 528,
+    "y": 1356,
+    "floor": 3,
+    "roomId": "97"
+  },
+  {
+    "id": "f3_node_333",
+    "x": 585,
+    "y": 1804,
+    "floor": 3
+  },
+  {
+    "id": "f3_node_334",
+    "x": 532,
+    "y": 1452,
+    "floor": 3,
+    "roomId": "96"
+  },
+  {
+    "id": "f3_node_335",
+    "x": 526,
+    "y": 1557,
+    "floor": 3,
+    "roomId": "95"
+  },
+  {
+    "id": "f3_node_336",
+    "x": 603,
+    "y": 1802,
+    "floor": 3,
+    "roomId": "деканат"
   }
 ];

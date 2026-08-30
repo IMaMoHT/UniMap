@@ -4,6 +4,7 @@ import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { MAP_WIDTH, MAP_HEIGHT } from "@/config/mapDimensions";
 import { mapNodes } from '@/config/mapNodes';
 import { mapEdges } from '@/config/mapEdges';
+import { mapPolygons } from '@/config/mapPolygons';
 import routeService from '@/services/RouteService';
 import type { PathResult } from '@/utils/pathfinding';
 
@@ -20,25 +21,92 @@ import Scenery from "@/components/Scenery";
 import SceneryEditor from "@/components/SceneryEditor";
 import CustomBuildingRenderer from "@/components/CustomBuildingRenderer";
 import CustomBuildingEditor from "@/components/CustomBuildingEditor";
+import QrCodeAdmin from "@/components/QrCodeAdmin";
+import MapErrorBoundary from "@/components/MapErrorBoundary";
+import { ADMIN_ENABLED } from "@/config/appConfig";
 
 const BeaconRenderer = lazy(() => import("@/components/BeaconRenderer"));
+
+type GraphNode = { id: string; x: number; y: number; floor: number; roomId?: string };
+
+/**
+ * Генерація id вузла, стійка до колізій.
+ *
+ * БУЛО: `f${floor}_node_${nodes.length + 1}` — лічильник від ДОВЖИНИ масиву.
+ * Після видалення будь-якого вузла довжина стає меншою за максимальний номер,
+ * і наступний доданий вузол отримує id, який ВЖЕ існує. Два різні вузли з одним
+ * id зливаються в одну сутність (Map у dijkstra лишає останній, sanitizeNodes —
+ * перший), через що зв'язок, намальований для одного, «прилипав» до іншого.
+ *
+ * СТАЛО: беремо максимальний уже використаний номер +1 і додатково
+ * перевіряємо унікальність.
+ */
+function createNode(
+  existing: GraphNode[],
+  floor: number,
+  x: number,
+  y: number,
+  roomId: string,
+): GraphNode {
+  let maxSuffix = 0;
+  const used = new Set<string>();
+  for (const node of existing) {
+    used.add(node.id);
+    const match = /_node_(\d+)$/.exec(node.id);
+    if (match) maxSuffix = Math.max(maxSuffix, Number(match[1]));
+  }
+
+  let suffix = maxSuffix + 1;
+  let id = `f${floor}_node_${suffix}`;
+  while (used.has(id)) {
+    suffix += 1;
+    id = `f${floor}_node_${suffix}`;
+  }
+
+  const trimmedRoomId = roomId.trim();
+  return { id, x, y, floor, ...(trimmedRoomId ? { roomId: trimmedRoomId } : {}) };
+}
+
+/** Пошук дублікатів id — тільки в dev, щоб проблема не тонула мовчки. */
+function warnAboutDuplicateNodeIds(nodes: GraphNode[]): void {
+  if (!import.meta.env?.DEV) return;
+  const seen = new Set<string>();
+  const dups = new Set<string>();
+  for (const node of nodes) {
+    if (seen.has(node.id)) dups.add(node.id);
+    seen.add(node.id);
+  }
+  if (dups.size > 0) {
+    console.error(
+      '[UniMap] Дубльовані id вузлів — вони зіллються в одну точку маршруту:',
+      [...dups].join(', '),
+    );
+  }
+}
 
 export default function MainPage() {
   const [activeFloor, setActiveFloor] = useState(1);
   
   // --- СТАН АДМІН-КЛІКЕРА ---
-  const [nodes, setNodes] = useState<{ id: string; x: number; y: number; floor: number; roomId?: string }[]>(mapNodes);
+  const [nodes, setNodes] = useState<GraphNode[]>(mapNodes);
   const [edges, setEdges] = useState<{ from: string; to: string; floor: number }[]>(mapEdges);
-  const [mode, setMode] = useState<'off' | 'nodes' | 'edges' | 'rooms' | 'delnode' | 'scenery' | 'building'>('off');
+  
+  const [polygons, setPolygons] = useState<{ id: string; points: {x: number, y: number}[]; fill: string; layer: number; floor: number }[]>(mapPolygons || []);
+  const [currentPolygon, setCurrentPolygon] = useState<{x: number, y: number}[]>([]);
+  const [polygonFill, setPolygonFill] = useState('rgba(39, 174, 107, 0.5)');
+  const [polygonLayer, setPolygonLayer] = useState(1);
+
+  const [mode, setMode] = useState<'off' | 'nodes' | 'edges' | 'rooms' | 'delnode' | 'scenery' | 'building' | 'polygons' | 'qr'>('off');
   const [currentRoomId, setCurrentRoomId] = useState('');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
-  const [isPanelVisible, setIsPanelVisible] = useState(true);
+  const [isPanelVisible, setIsPanelVisible] = useState(ADMIN_ENABLED);
   const [mapScale, setMapScale] = useState(1);
   const [nodePath, setNodePath] = useState<PathResult | null>(null);
   const [showNodes, setShowNodes] = useState(true);
 
   useEffect(() => {
+    warnAboutDuplicateNodeIds(nodes);
     routeService.setGraph(nodes, edges);
   }, [nodes, edges]);
 
@@ -48,24 +116,41 @@ export default function MainPage() {
         setNodePath(null);
         return;
       }
-
       setNodePath(routes[0].nodePath ?? null);
     });
   }, []);
 
   // --- ЛОГІКА АДМІН-КЛІКЕРА ---
   const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (mode !== 'nodes' || draggingNodeId) return;
+    if (draggingNodeId) return;
+    if (mode !== 'nodes' && mode !== 'polygons') return;
+
     const rect = e.currentTarget.getBoundingClientRect();
     const x = Math.round((e.clientX - rect.left) / mapScale);
     const y = Math.round((e.clientY - rect.top) / mapScale);
-    const newNode = {
-      id: `f${activeFloor}_node_${nodes.length + 1}`,
-      x, y, floor: activeFloor,
-      ...(currentRoomId.trim() ? { roomId: currentRoomId.trim() } : {})
+    
+    if (mode === 'nodes') {
+      setNodes(prev => [...prev, createNode(prev, activeFloor, x, y, currentRoomId)]);
+      setCurrentRoomId('');
+    } else if (mode === 'polygons') {
+      setCurrentPolygon([...currentPolygon, { x, y }]);
+    }
+  };
+
+  const finishPolygon = () => {
+    if (currentPolygon.length < 3) {
+      alert('Полігон повинен мати хоча б 3 точки!');
+      return;
+    }
+    const newPolygon = {
+      id: `poly_f${activeFloor}_${Date.now()}`,
+      points: currentPolygon,
+      fill: polygonFill,
+      layer: polygonLayer,
+      floor: activeFloor
     };
-    setNodes([...nodes, newNode]);
-    setCurrentRoomId('');
+    setPolygons([...polygons, newPolygon]);
+    setCurrentPolygon([]);
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -100,7 +185,7 @@ export default function MainPage() {
           (edge.from === selectedNodeId && edge.to === nodeId) ||
           (edge.from === nodeId && edge.to === selectedNodeId));
         if (idx >= 0) {
-          setEdges(prev => prev.filter((_, i) => i !== idx)); // роз'єднати
+          setEdges(prev => prev.filter((_, i) => i !== idx));
         } else {
           setEdges([...edges, { from: selectedNodeId, to: nodeId, floor: activeFloor }]);
         }
@@ -117,19 +202,39 @@ export default function MainPage() {
   };
   useDeleteKey(selectedNodeId, deleteSelectedNode);
 
-  const copyNodes = () => {
-    navigator.clipboard.writeText(`export const mapNodes = ${JSON.stringify(nodes, null, 2)};`);
-    alert('Вузли скопійовано!');
+  // --- БЕЗПЕЧНЕ КОПІЮВАННЯ ДЛЯ HTTP / WI-FI ---
+  const safeCopy = (text: string, successMessage: string) => {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => alert(successMessage));
+    } else {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        alert(successMessage);
+      } catch (err) {
+        alert('Не вдалося скопіювати автоматично. Скопіюйте код вручну з чорного поля внизу!');
+      }
+      document.body.removeChild(textArea);
+    }
   };
 
-  const copyEdges = () => {
-    navigator.clipboard.writeText(`export const mapEdges = ${JSON.stringify(edges, null, 2)};`);
-    alert('Зв’язки скопійовано!');
-  };
+  const copyNodes = () => safeCopy(`export const mapNodes = ${JSON.stringify(nodes, null, 2)};`, 'Вузли скопійовано!');
+  const copyEdges = () => safeCopy(`export const mapEdges = ${JSON.stringify(edges, null, 2)};`, 'Зв’язки скопійовано!');
+  const copyPolygons = () => safeCopy(`export const mapPolygons = ${JSON.stringify(polygons, null, 2)};`, 'Зони скопійовано!');
 
   const clearLast = () => {
     if (mode === 'nodes') setNodes(nodes.slice(0, -1));
     else if (mode === 'edges') setEdges(edges.slice(0, -1));
+    else if (mode === 'polygons') {
+      if (currentPolygon.length > 0) setCurrentPolygon(currentPolygon.slice(0, -1));
+      else setPolygons(polygons.slice(0, -1));
+    }
   };
 
   return (
@@ -141,39 +246,104 @@ export default function MainPage() {
         limitToBounds={true}
         centerZoomedOut={false}
         centerOnInit={true}
-        onTransform={(ref) => setMapScale(ref.state.scale)} // 👈 ВИПРАВЛЕНО НА onTransform
+        onTransform={(ref) => setMapScale(ref.state.scale)}
         zoomAnimation={{ disabled: false, animationTime: 400, animationType: "easeOut" }}
         wheel={{ step: 0.015, wheelDisabled: false }}
         panning={{ disabled: mode !== 'off' }}
       >
         {() => (
           <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh', overflow: 'hidden', backgroundColor: '#ffffff' }}>
-            <div style={{ position: 'relative', width: `${MAP_WIDTH}px`, height: `${MAP_HEIGHT}px`, willChange: 'transform', transform: 'translate3d(0, 0, 0)', backfaceVisibility: 'hidden' }}>
+            <div 
+              style={{ position: 'relative', width: `${MAP_WIDTH}px`, height: `${MAP_HEIGHT}px`, willChange: 'transform', transform: 'translate3d(0, 0, 0)', backfaceVisibility: 'hidden' }}
+              onClick={handleMapClick}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+            >
               
               <MapBackground activeFloor={activeFloor} />
 
-              {activeFloor === 1 && <Courtyard />}
-              {activeFloor === 1 && mode !== 'scenery' && <Scenery />}
-              {mode === 'scenery' && <SceneryEditor mapScale={mapScale} />}
-              {activeFloor === 1 && mode !== 'building' && <CustomBuildingRenderer floor={1} />}
-              {mode === 'building' && <CustomBuildingEditor mapScale={mapScale} />}
+              <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 1 }}>
+                {polygons
+                  .filter(p => p.floor === activeFloor)
+                  .sort((a, b) => a.layer - b.layer)
+                  .map(poly => (
+                    <polygon
+                      key={poly.id}
+                      points={poly.points.map(p => `${p.x},${p.y}`).join(' ')}
+                      fill={poly.fill}
+                      stroke={poly.fill.replace(/[\d.]+\)$/g, '0.8)')} 
+                      strokeWidth="2"
+                      style={{ transition: 'all 0.3s ease' }}
+                    />
+                ))}
+
+                {currentPolygon.length > 0 && mode === 'polygons' && (
+                  <>
+                    <polyline
+                      points={currentPolygon.map(p => `${p.x},${p.y}`).join(' ')}
+                      fill="rgba(243, 156, 18, 0.2)"
+                      stroke="#f39c12"
+                      strokeWidth="3"
+                      strokeDasharray="5,5"
+                    />
+                    {currentPolygon.map((p, i) => (
+                      <circle key={i} cx={p.x} cy={p.y} r={5 / mapScale} fill="#f39c12" stroke="white" strokeWidth={2 / mapScale} />
+                    ))}
+                  </>
+                )}
+              </svg>
+
+              {/* Декоративні шари ізольовані: биті дані в sceneryItems/будівлях
+                  не мають ронити карту й маршрут */}
+              <div style={{ position: 'relative', zIndex: 5 }}>
+                <MapErrorBoundary section="Двір і озеленення">
+                  {activeFloor === 1 && <Courtyard />}
+                  {activeFloor === 1 && mode !== 'scenery' && <Scenery />}
+                  {ADMIN_ENABLED && mode === 'scenery' && <SceneryEditor mapScale={mapScale} />}
+                </MapErrorBoundary>
+                <MapErrorBoundary section="Конструктор будівель">
+                  {activeFloor === 1 && mode !== 'building' && <CustomBuildingRenderer floor={1} />}
+                  {ADMIN_ENABLED && mode === 'building' && <CustomBuildingEditor mapScale={mapScale} />}
+                </MapErrorBoundary>
+              </div>
 
               {mode !== 'rooms' && (
-                <PositionedElementsRenderer mapTransform={{ scale: 1, x: 0, y: 0 }} activeFloor={activeFloor} />
+                <MapErrorBoundary section="Аудиторії">
+                  <PositionedElementsRenderer mapTransform={{ scale: 1, x: 0, y: 0 }} activeFloor={activeFloor} />
+                </MapErrorBoundary>
               )}
 
-              <NodePathRenderer path={nodePath} activeFloor={activeFloor} onFloorChange={setActiveFloor} fallbackLine={null} />
+              <MapErrorBoundary section="Маршрут">
+                <NodePathRenderer path={nodePath} activeFloor={activeFloor} onFloorChange={setActiveFloor} />
+              </MapErrorBoundary>
 
-              {mode === 'rooms' && <RoomEditor activeFloor={activeFloor} mapScale={mapScale} />}
-              
-              <AdminClicker 
-                mapTransform={{ scale: 1, x: 0, y: 0 }} 
-                activeFloor={activeFloor}
-                nodes={nodes} edges={edges} mode={mode} currentRoomId={currentRoomId}
-                selectedNodeId={selectedNodeId} draggingNodeId={draggingNodeId} showNodes={showNodes}
-                onMapClick={handleMapClick} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}
-                onNodeMouseDown={handleNodeMouseDown} onNodeClick={handleNodeClick}
-              />
+              {ADMIN_ENABLED && mode === 'rooms' && (
+                <MapErrorBoundary section="Редактор аудиторій">
+                  <RoomEditor activeFloor={activeFloor} mapScale={mapScale} />
+                </MapErrorBoundary>
+              )}
+
+              {ADMIN_ENABLED && mode === 'qr' && (
+                <MapErrorBoundary section="Генератор QR">
+                  <QrCodeAdmin />
+                </MapErrorBoundary>
+              )}
+
+              {/* Шар вузлів/зв'язків — суто адмінський, у продакшн не потрапляє */}
+              {ADMIN_ENABLED && (
+                <AdminClicker
+                  mapTransform={{ scale: 1, x: 0, y: 0 }}
+                  activeFloor={activeFloor}
+                  nodes={nodes} edges={edges} mode={mode} currentRoomId={currentRoomId}
+                  selectedNodeId={selectedNodeId} draggingNodeId={draggingNodeId} showNodes={showNodes}
+                  onMapClick={() => {}}
+                  onMouseMove={() => {}}
+                  onMouseUp={() => {}}
+                  onNodeMouseDown={handleNodeMouseDown}
+                  onNodeClick={handleNodeClick}
+                />
+              )}
               
               <Suspense fallback={null}>
                 <BeaconRenderer mapTransform={{ scale: 1, x: 0, y: 0 }} showBeacons={false} />
@@ -184,14 +354,14 @@ export default function MainPage() {
         )}
       </TransformWrapper>
 
-      {/* --- АДМІН-ПАНЕЛЬ --- */}
-      {!isPanelVisible && (
+      {/* --- АДМІН-ПАНЕЛЬ (тільки в dev-збірці, див. config/appConfig.ts) --- */}
+      {ADMIN_ENABLED && !isPanelVisible && (
         <button onClick={() => setIsPanelVisible(true)} style={{ position: 'fixed', top: 20, left: 20, zIndex: 1000, background: '#222', color: '#00ff00', padding: '12px 20px', border: '2px solid #333', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
           🛠 Відкрити адмін-панель
         </button>
       )}
 
-      {isPanelVisible && (
+      {ADMIN_ENABLED && isPanelVisible && (
         <div style={{ position: 'fixed', top: 0, left: 0, bottom: 0, width: '320px', zIndex: 1000, background: '#1a1a1a', borderRight: '1px solid #333', boxShadow: '4px 0 15px rgba(0,0,0,0.5)', color: 'white', padding: '20px', display: 'flex', flexDirection: 'column', overflowY: 'auto', fontFamily: 'sans-serif' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>
             <h3 style={{ margin: 0, color: '#00ff00', fontSize: '18px' }}>🛠 Адмін-панель</h3>
@@ -199,16 +369,21 @@ export default function MainPage() {
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
-            <button onClick={() => { setMode('off'); setSelectedNodeId(null); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'off' ? '#444' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>📱 Рухати мапу</button>
-            <button onClick={() => { setMode('nodes'); setSelectedNodeId(null); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'nodes' ? '#28a745' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>📍 Додавати Вузли</button>
-            <button onClick={() => setMode('edges')} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'edges' ? '#007bff' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>🔗 З'єднувати Зв’язки</button>
-            <button onClick={() => { setMode('delnode'); setSelectedNodeId(null); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'delnode' ? '#dc3545' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>🗑 Видаляти вузли</button>
-            <button onClick={() => { setMode(mode === 'scenery' ? 'off' : 'scenery'); setSelectedNodeId(null); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'scenery' ? '#2f6f4f' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>🏗 Двір/будівлі</button>
-            <button onClick={() => { setMode(mode === 'building' ? 'off' : 'building'); setSelectedNodeId(null); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'building' ? '#6f42c1' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>🏛 Конструктор будівель</button>
-            <button onClick={() => { setMode(mode === 'rooms' ? 'off' : 'rooms'); setSelectedNodeId(null); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'rooms' ? '#ff9800' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>✏️ Редагувати аудиторії</button>
+            <button onClick={() => { setMode('off'); setSelectedNodeId(null); setCurrentPolygon([]); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'off' ? '#444' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>📱 Рухати мапу</button>
+            <button onClick={() => { setMode('nodes'); setSelectedNodeId(null); setCurrentPolygon([]); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'nodes' ? '#28a745' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>📍 Додавати Вузли</button>
+            <button onClick={() => { setMode('edges'); setCurrentPolygon([]); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'edges' ? '#007bff' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>🔗 З'єднувати Зв’язки</button>
+            <button onClick={() => { setMode('delnode'); setSelectedNodeId(null); setCurrentPolygon([]); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'delnode' ? '#dc3545' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>🗑 Видаляти вузли</button>
+            
+            <button onClick={() => { setMode('polygons'); setSelectedNodeId(null); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'polygons' ? '#f39c12' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>🌿 Малювати зони (шари)</button>
+            
+            <button onClick={() => { setMode(mode === 'scenery' ? 'off' : 'scenery'); setSelectedNodeId(null); setCurrentPolygon([]); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'scenery' ? '#2f6f4f' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>🏗 Двір/будівлі</button>
+            <button onClick={() => { setMode(mode === 'building' ? 'off' : 'building'); setSelectedNodeId(null); setCurrentPolygon([]); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'building' ? '#6f42c1' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>🏛 Конструктор будівель</button>
+            <button onClick={() => { setMode(mode === 'rooms' ? 'off' : 'rooms'); setSelectedNodeId(null); setCurrentPolygon([]); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'rooms' ? '#ff9800' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>✏️ Редагувати аудиторії</button>
+            <button onClick={() => { setMode(mode === 'qr' ? 'off' : 'qr'); setSelectedNodeId(null); setCurrentPolygon([]); }} style={{ padding: '12px', fontWeight: 'bold', background: mode === 'qr' ? '#0d9488' : '#222', color: 'white', border: '1px solid #444', borderRadius: '6px', cursor: 'pointer' }}>🔳 QR-коди аудиторій</button>
+            
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', background: '#222', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', border: '1px solid #444' }}>
               <input type="checkbox" checked={!showNodes} onChange={(e) => setShowNodes(!e.target.checked)} />
-              👁 Сховати вузли (перевірити маршрут)
+              👁 Сховати вузли
             </label>
           </div>
 
@@ -219,15 +394,30 @@ export default function MainPage() {
             </div>
           )}
 
+          {mode === 'polygons' && (
+            <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '8px', background: '#222', padding: '15px', borderRadius: '6px' }}>
+              <label style={{ fontSize: '13px', color: '#ccc' }}>Колір заливки (rgba):</label>
+              <input type="text" value={polygonFill} onChange={(e) => setPolygonFill(e.target.value)} style={{ padding: '8px', borderRadius: '4px', border: '1px solid #444', background: '#111', color: '#fff' }} />
+              
+              <label style={{ fontSize: '13px', color: '#ccc', marginTop: '10px' }}>Шар накладання (Layer):</label>
+              <input type="number" value={polygonLayer} onChange={(e) => setPolygonLayer(Number(e.target.value))} style={{ padding: '8px', borderRadius: '4px', border: '1px solid #444', background: '#111', color: '#fff' }} />
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                <button onClick={finishPolygon} style={{ flex: 1, padding: '10px', background: '#28a745', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>✅ Завершити</button>
+                <button onClick={() => setCurrentPolygon([])} style={{ flex: 1, padding: '10px', background: '#dc3545', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>❌ Скинути</button>
+              </div>
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-            <button onClick={mode === 'edges' ? copyEdges : copyNodes} style={{ flex: 1, padding: '10px', background: '#17a2b8', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '6px', fontWeight: 'bold' }}>📋 Копіювати код</button>
+            <button onClick={mode === 'polygons' ? copyPolygons : (mode === 'edges' ? copyEdges : copyNodes)} style={{ flex: 1, padding: '10px', background: '#17a2b8', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '6px', fontWeight: 'bold' }}>📋 Копіювати код</button>
             <button onClick={clearLast} style={{ padding: '10px', background: '#dc3545', color: 'white', border: 'none', cursor: 'pointer', borderRadius: '6px', fontWeight: 'bold' }}>↩️ Скасувати</button>
           </div>
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <label style={{ fontSize: '13px', color: '#aaa', marginBottom: '5px' }}>Згенерований код (JSON):</label>
             <pre style={{ flex: 1, background: '#0a0a0a', padding: '10px', borderRadius: '6px', border: '1px solid #333', overflowY: 'auto', fontSize: '12px', color: '#00ff00', margin: 0 }}>
-              {JSON.stringify(mode === 'edges' ? edges : nodes, null, 2)}
+              {JSON.stringify(mode === 'polygons' ? polygons : (mode === 'edges' ? edges : nodes), null, 2)}
             </pre>
           </div>
         </div>

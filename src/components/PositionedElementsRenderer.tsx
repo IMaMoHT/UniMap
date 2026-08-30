@@ -3,6 +3,7 @@ import type { PositionedElementConfig } from '../services/PositionedElementsServ
 import roomHighlightService from '../services/RoomHighlightService';
 import { getSquaresConfigForFloor } from '../config/positionedElements';
 import { MAP_HEIGHT, MAP_WIDTH } from '../config/mapDimensions';
+import { getRoomLabel } from '../utils/roomLabels';
 import './PositionedElementsRenderer.css';
 
 interface PositionedElementsRendererProps {
@@ -129,10 +130,44 @@ interface PreparedRoom extends PositionedElementConfig {
   defaultText?: string | number;
   hoverText?: string;
   hasHoverText: boolean;
+  /** Іконка замість підпису — щоб текст не накладався на іконку */
+  showIconOnly: boolean;
+  /** Доступний опис іконки (для скрінрідерів), коли підпис прихований */
+  iconAlt?: string;
   baseStyle: React.CSSProperties;
   baseCardStyle: React.CSSProperties;
   contentStyle: React.CSSProperties;
 }
+
+/** Категорії, для яких іконка самодостатня і підпис лише заважає. */
+const ICON_ONLY_CATEGORIES = new Set(['toilet', 'stairs', 'buffet']);
+
+/**
+ * Технічні підписи, що приїхали з конфігів ("stairs1", "toilet1",
+ * "stairsrotunda2"...). Такий текст ніколи не має накладатися на іконку.
+ */
+const TECHNICAL_LABEL = /^(?:stairs|toilet|wc|buffet|сходи|stairs?\d*)[\s_-]*\d*$/i;
+
+/**
+ * Рішення «іконка АБО текст».
+ *  1. явний iconOnly у конфігу має найвищий пріоритет;
+ *  2. без іконки — завжди текст;
+ *  3. утилітарні категорії (вбиральня/сходи/буфет) — лише іконка;
+ *  4. інакше іконка+текст дозволені, але технічний підпис приховуємо.
+ */
+const resolveIconOnly = (
+  room: PositionedElementConfig,
+  hasIcon: boolean,
+  defaultText: string | number | undefined,
+): boolean => {
+  if (typeof room.iconOnly === 'boolean') return room.iconOnly && hasIcon;
+  if (!hasIcon) return false;
+  if (ICON_ONLY_CATEGORIES.has(room.category ?? 'regular')) return true;
+
+  const label = (defaultText ?? '').toString().trim();
+  if (!label) return true;
+  return TECHNICAL_LABEL.test(label);
+};
 
 const resolveRoomText = (
   squareConfig: PositionedElementConfig,
@@ -247,7 +282,10 @@ const RoomElement = React.memo(
         }
       : room.baseCardStyle;
 
-    const showDefaultText = room.defaultText !== undefined && room.defaultText !== null;
+    // Взаємовиключний рендер: або іконка, або підпис — інакше вони накладаються
+    const showDefaultText =
+      !room.showIconOnly && room.defaultText !== undefined && room.defaultText !== null;
+    const showHoverText = !room.showIconOnly && room.hasHoverText;
 
     return (
       <div
@@ -263,7 +301,7 @@ const RoomElement = React.memo(
                 {room.defaultText}
               </span>
             )}
-            {room.hasHoverText && (
+            {showHoverText && (
               <span className="positioned-element__text positioned-element__text--hover">
                 {room.hoverText}
               </span>
@@ -272,8 +310,14 @@ const RoomElement = React.memo(
           {room.resolvedImgSrc && (
             <img
               src={room.resolvedImgSrc}
-              alt={room.id}
+              alt={room.iconAlt ?? room.id}
               className="positioned-element__img"
+              loading="lazy"
+              draggable={false}
+              onError={(e) => {
+                // Немає спрайта — ховаємо <img>, щоб не було "битої" іконки
+                e.currentTarget.style.display = 'none';
+              }}
               style={{ transform: `translate(-50%, -50%) rotate(${-(room.rotation || 0)}deg)` }}
             />
           )}
@@ -341,6 +385,8 @@ export const PositionedElementsRenderer: React.FC<PositionedElementsRendererProp
         squareConfig.fontSize || 24
       );
       const hasHoverText = Boolean(hoverText && hoverText.trim());
+      const showIconOnly = resolveIconOnly(squareConfig, Boolean(resolvedImgSrc), defaultText);
+      const iconAlt = showIconOnly ? getRoomLabel(squareConfig, language) : '';
 
       const baseStyle: React.CSSProperties = {
         position: 'absolute',
@@ -375,6 +421,8 @@ export const PositionedElementsRenderer: React.FC<PositionedElementsRendererProp
         defaultText,
         hoverText,
         hasHoverText,
+        showIconOnly,
+        iconAlt,
         baseStyle,
         baseCardStyle,
         contentStyle,
@@ -382,20 +430,29 @@ export const PositionedElementsRenderer: React.FC<PositionedElementsRendererProp
     });
   }, [activeFloor, language]);
 
+  /**
+   * Ключ містить поверх та індекс, а не лише id.
+   *
+   * У конфігах є дублікати id (напр. `stairs1` двічі на 2 поверсі, «Кабінет 99»
+   * двічі на 3-му). При однакових ключах React перевикористовує DOM-вузли
+   * попереднього списку — саме тому при перемиканні поверхів на активному
+   * лишалися елементи/іконки з іншого поверху. Префікс поверху гарантує, що
+   * при зміні floor піддерево створюється заново.
+   */
   const renderedRooms = useMemo(
     () =>
       preparedRooms
         .filter(element => element.visible !== false)
-        .map(element => (
+        .map((element, index) => (
           <RoomElement
-            key={element.id}
+            key={`f${activeFloor}:${element.id}:${index}`}
             room={element}
             isHighlighted={highlightedRoomIdsSet.has(element.id)}
             highlightColor={highlightColor}
             highlightVars={highlightVars}
           />
         )),
-    [preparedRooms, highlightedRoomIdsSet, highlightColor, highlightVars]
+    [preparedRooms, highlightedRoomIdsSet, highlightColor, highlightVars, activeFloor]
   );
 
   return (

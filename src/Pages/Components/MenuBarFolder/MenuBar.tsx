@@ -7,8 +7,6 @@ import logonobg from '../../../Sprite/UniMap-Logo.svg'
 import FloorContainer from '../FloorContainer/FloorContainer';
 import SetARoute from '../SetARoute/SetARoute';
 import SettingsContainer from '../SettingsContainer/SettingsContainer';
-import RegisterContainer from '../RegisterContainer/RegisterContainer';
-import BuildingSelector from '../BuildingSelector/BuildingSelector';
 import LupaIcon from '../../../Sprite/Loupe.svg';
 import roomHighlightService from '../../../services/RoomHighlightService';
 import { regularRooms } from '../../../config/positionedElements';
@@ -222,11 +220,6 @@ const MenuBar: React.FC<MenuBarProps> = ({ activeFloor: propActiveFloor, onFloor
               )}
             </section>
 
-            <section className="menu-bar__section" aria-labelledby="building-heading">
-              <h2 id="building-heading" className="visually-hidden">Корпус</h2>
-              <BuildingSelector />
-            </section>
-
             <section className="menu-bar__section" aria-labelledby="floors-heading">
               <h2 id="floors-heading" className="visually-hidden">Поверх</h2>
               <FloorContainer
@@ -242,15 +235,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ activeFloor: propActiveFloor, onFloor
 
             <div className="Line"></div>
 
-            <section className="menu-bar__section" aria-labelledby="settings-heading">
-              <h2 id="settings-heading" className="visually-hidden">Настройки и ссылки</h2>
+            <section className="menu-bar__section" aria-labelledby="links-heading">
+              <h2 id="links-heading" className="visually-hidden">Посилання</h2>
               <SettingsContainer />
             </section>
           </div>
-
-          <footer className="menu-bar__footer">
-            <RegisterContainer />
-          </footer>
         </>
       )}
     </aside>

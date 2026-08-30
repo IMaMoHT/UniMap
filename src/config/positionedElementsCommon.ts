@@ -1,35 +1,35 @@
 import type { PositionedElementConfig } from '../services/PositionedElementsService';
 
-// �'�����?�?�<�� �?���+�>�?�? �?�>�? �?�+�<�ؐ?�<�: ��?�?�?���'
+//
 const baseRoomStyle = {
-  color: '#39A39B',           // ���?��' �"�?�?�� ��?�?�?���'�<
-  borderColor: '#2d8a84',      // ���?��' �?�?���?��ő< ��?�?�?���'�<
-  borderWidth: 2,              // ���?�>�%��?�� �?�?���?��ő< (�? �����?��>�?�:)
-  borderRadius: 8,             // ����?�?�?�>��?��� �?�?�>�?�? (�? �����?��>�?�:)
-  fontSize: 24,                // �������?��? �?�?��"�'�� �?�?�?��?�� ��?�?�?���'�<
-  fontColor: '#ffffff',        // ���?��' �'���?�'�� �?�?�?��?�� ��?�?�?���'�<
-  zIndex: 1,                   // �?�?�?�?�?�?�� �?�'�?�+�?�����?��? (�+�?�>�?�?�� = �?�<�?��)
-  visible: true,               // �'��?��?�?�?�'�? ��?�?�?���'�<
-  rotation: 0,                 // �?�?�?�?�?�?�' ��?�?�?���'�< (�? �?�?���?�?�?���:)
+  color: '#39A39B',
+  borderColor: '#2d8a84',
+  borderWidth: 2,
+  borderRadius: 8,
+  fontSize: 24,
+  fontColor: '#ffffff',
+  zIndex: 1,
+  visible: true,
+  rotation: 0,
 } as const;
 
-// ����+�>�?�? �?�>�? �'�?���>��'�?�?
+//
 const toiletStyle = {
   ...baseRoomStyle,
-  // �?�?��?�? ����?��?���?��?��>��'�? �?�'��>�� �?�>�? �'�?���>��'�?�?, �?�����?��?��?:
+  //
   // color: '#4CAF50',
   // borderColor: '#45a049',
 } as const;
 
-// ����+�>�?�? �?�>�? �>��?�'�?���
+//
 const stairsStyle = {
   ...baseRoomStyle,
-  // �?�?��?�? ����?��?���?��?��>��'�? �?�'��>�� �?�>�? �>��?�'�?���, �?�����?��?��?:
+  //
   // color: '#FF9800',
   // borderColor: '#F57C00',
 } as const;
 
-// ����+�>�?�? �?�>�? �+�?�"��'�?�?
+//
 const buffetStyle = {
   ...baseRoomStyle,
   color: '#5ABCB3' as const,
@@ -37,7 +37,7 @@ const buffetStyle = {
 };
 
 // ============================================
-// �?��>�?��� �"�>�� ���?�-�"�?�?�?�� �?�?�?�?�?��
+//
 // ============================================
 
 export type RoomCategory = 'regular' | 'toilet' | 'stairs' | 'buffet';
@@ -50,6 +50,8 @@ export interface CreateRoomParams {
   height: number;
   number?: number;
   imgSrc?: string;
+  /** true — лише іконка без підпису; false — примусово з підписом */
+  iconOnly?: boolean;
   rotation?: number;
   category?: RoomCategory;
   corridor: number;
@@ -76,7 +78,7 @@ export interface CreateRoomParams {
         OnDefault?: boolean;
         OnHover?: string;
       };
-  // �?��?��?���?��?��>��?��� �?�'��>��� �?�>�? ��?�?��?��'�?�?�� ��?�?�?���'�< (�?���Ő�?�?���>�?�?�?)
+  //
   styleOverrides?: Partial<Omit<typeof baseRoomStyle, 'color' | 'borderColor'>> & {
     color?: string;
     borderColor?: string;
@@ -86,23 +88,23 @@ export interface CreateRoomParams {
 export function createRoom(params: CreateRoomParams): PositionedElementConfig {
   const { category = 'regular', styleOverrides = {}, rotation, floor } = params;
 
-  // �'�<�+��?����? �+�����?�?�<�� �?�'��>�? �? �����?��?��?�?�?�'�� �?�' ����'��?�?�?���
+  //
   let baseStyle: typeof baseRoomStyle = baseRoomStyle;
   if (category === 'toilet') baseStyle = toiletStyle as unknown as typeof baseRoomStyle;
   else if (category === 'stairs') baseStyle = stairsStyle as unknown as typeof baseRoomStyle;
   else if (category === 'buffet') baseStyle = buffetStyle as unknown as typeof baseRoomStyle;
 
-  // �?�?��?��?�?��? ����?��?���?��?��>��?��? �?�'��>���, �?�? ��?��>�?�ؐ���? rotation ��� baseStyle
+  //
   const { rotation: baseRotation, ...styleWithoutRotation } = baseStyle;
   const finalStyle = { ...styleWithoutRotation, ...styleOverrides };
 
-  // �?�+�?���+���'�<�?����? id - ��?�>�� �?�'�? �?�+�?���', ��?���?�>�?���?��? Ukrainian ����� �?�'�?�?��?
+  //
   const id = typeof params.id === 'string' ? params.id : params.id.Ukrainian;
 
-  // ���?���?����? �+�����?�?�<�� �?�+�?���'
+  //
   const room: PositionedElementConfig = {
     id,
-    x: params.x ?? 0, // x �?�+�?�����'��>��?, ��?���?�>�?���?��? 0 ���? �?�?�?�>�ؐ��?��?
+    x: params.x ?? 0,
     y: params.y,
     width: params.width,
     height: params.height,
@@ -115,18 +117,22 @@ export function createRoom(params: CreateRoomParams): PositionedElementConfig {
     ...finalStyle,
   };
 
-  // �?�+�?���+���'�<�?����? text - ��?���?�>�?���?��? type assertion, �'���� ����� ��?�'��?�"����? �?�� ���?�>�?�?�?�'�?�? �?�?�?�'�?��'�?�'�?�?��' �?����>�?�?�?�?�? ��?���?�>�?���?�?���?��?
+  //
   if (params.text) {
     room.text = params.text as PositionedElementConfig['text'];
   }
 
-  // Normalize id for all regular numbered rooms to "�?���+�-�?��' {number}"
+  //
   if (category === 'regular' && typeof params.number === 'number') {
-    room.id = `�?���+�-�?��' ${params.number}`;
+    room.id = `Кабінет ${params.number}`;
   }
 
   if (params.imgSrc) {
     room.imgSrc = params.imgSrc;
+  }
+
+  if (typeof params.iconOnly === 'boolean') {
+    room.iconOnly = params.iconOnly;
   }
 
   return room;

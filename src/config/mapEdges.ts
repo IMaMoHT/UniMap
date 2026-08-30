@@ -1455,8 +1455,193 @@ export const mapEdges = [
     "floor": 1
   },
   {
+    "from": "f1_node_195",
+    "to": "f1_node_311",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_195",
+    "to": "f1_node_312",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_312",
+    "to": "f1_node_313",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_313",
+    "to": "f1_node_319",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_314",
+    "to": "f1_node_319",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_314",
+    "to": "f1_node_315",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_315",
+    "to": "f1_node_316",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_316",
+    "to": "f1_node_317",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_317",
+    "to": "f1_node_318",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_318",
+    "to": "f1_node_310",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_310",
+    "to": "f1_node_309",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_309",
+    "to": "f1_node_308",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_308",
+    "to": "f1_node_307",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_307",
+    "to": "f1_node_306",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_306",
+    "to": "f1_node_71",
+    "floor": 1
+  },
+  {
+    "from": "f1_node_311",
+    "to": "f1_node_307",
+    "floor": 1
+  },
+  {
+    "from": "f2_node_320",
+    "to": "f2_node_72",
+    "floor": 2
+  },
+  {
+    "from": "f2_node_321",
+    "to": "f2_node_73",
+    "floor": 2
+  },
+  {
+    "from": "f2_node_243",
+    "to": "f2_node_109",
+    "floor": 2
+  },
+  {
+    "from": "f2_node_90",
+    "to": "f2_node_91",
+    "floor": 2
+  },
+  {
+    "from": "f1_node_1",
+    "to": "f1_node_322",
+    "floor": 1
+  },
+  {
+    "from": "f3_node_124",
+    "to": "f3_node_322",
+    "floor": 3
+  },
+  {
     "from": "f1_node_303",
     "to": "f1_node_304",
     "floor": 1
+  },
+  {
+    "from": "f2_node_322",
+    "to": "f2_node_323",
+    "floor": 2
+  },
+  {
+    "from": "f2_node_323",
+    "to": "f2_node_324",
+    "floor": 2
+  },
+  {
+    "from": "f2_node_324",
+    "to": "f2_node_325",
+    "floor": 2
+  },
+  {
+    "from": "f2_node_323",
+    "to": "f2_node_326",
+    "floor": 2
+  },
+  {
+    "from": "f3_node_155",
+    "to": "f3_node_327",
+    "floor": 3
+  },
+  {
+    "from": "f3_node_126",
+    "to": "f3_node_330",
+    "floor": 3
+  },
+  {
+    "from": "f3_node_126",
+    "to": "f3_node_328",
+    "floor": 3
+  },
+  {
+    "from": "f3_node_127",
+    "to": "f3_node_329",
+    "floor": 3
+  },
+  {
+    "from": "f3_node_331",
+    "to": "f3_node_128",
+    "floor": 3
+  },
+  {
+    "from": "f3_node_332",
+    "to": "f3_node_138",
+    "floor": 3
+  },
+  {
+    "from": "f2_node_333",
+    "to": "f2_node_334",
+    "floor": 2
+  },
+  {
+    "from": "f3_node_134",
+    "to": "f3_node_333",
+    "floor": 3
+  },
+  {
+    "from": "f3_node_137",
+    "to": "f3_node_334",
+    "floor": 3
+  },
+  {
+    "from": "f3_node_131",
+    "to": "f3_node_335",
+    "floor": 3
+  },
+  {
+    "from": "f3_node_333",
+    "to": "f3_node_336",
+    "floor": 3
   }
 ];

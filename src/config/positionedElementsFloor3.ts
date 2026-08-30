@@ -1,353 +1,83 @@
 import { createRoom, type FloorCorridorGroups } from './positionedElementsCommon';
 
 export const corridorGroupsFloor3: FloorCorridorGroups = {
-  corridor1:{
-    name: "Коридор 1",
-
+  corridor1: {
+    name: "Аудиторії",
     rooms: [
       createRoom({
-
-        id: {
-
-          Ukrainian: 'Кабінет 46',
-
-          English: 'Office 46',
-
-        },
-
-        number: 46,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: 'Темпус Тасіс\n“САСФАРМ”\nРесурсний центр',
-
-            English: 'Temptus Tasis\n“SASCARM”\nResource Center',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        id: "Кабінет 47",
+        number: 47,
+        category: 'regular',
         x: 1262,
-
         y: 2746,
-
         width: 196,
-
         height: 160,
-
         corridor: 1,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "47 - Темпус Тасіс“САСФАРМ”Ресурсний центр", English: "47 - Темпус Тасіс“САСФАРМ”Ресурсний центр" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-
-        id: {
-
-          Ukrainian: 'Кабінет 48',
-
-          English: 'Office 48',
-
-        },
-
+        id: "Кабінет 48",
         number: 48,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: 'Викладацька',
-
-            English: 'Teaching Department',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 1458,
-
         y: 2746,
-
         width: 158,
-
         height: 160,
-
         corridor: 1,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "Викладацька", English: "Викладацька" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-
-        id: {
-
-          Ukrainian: 'Кабінет 45',
-
-          English: 'Office 45',
-
-        },
-
+        id: "Кабінет 45",
         number: 45,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
-        x: 1262,
-
-        y: 3012,
-
-        width: 142,
-
+        category: 'regular',
+        x: 1335,
+        y: 3011,
+        width: 73,
         height: 160,
-
         corridor: 1,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "45", English: "45" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-
-        id: {
-
-          Ukrainian: 'Кабінет 44',
-
-          English: 'Office 44',
-
-        },
-
+        id: "Кабінет 44",
         number: 44,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 1410,
-
         y: 3012,
-
         width: 214,
-
         height: 160,
-
         corridor: 1,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "44", English: "44" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-
-        id: {
-
-          Ukrainian: 'Кабінет 42',
-
-          English: 'Office 42',
-
-        },
-
+        id: "Кабінет 42",
         number: 42,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 1702,
-
         y: 3012,
-
         width: 340,
-
         height: 160,
-
         corridor: 1,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "42", English: "42" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-
-        id: {
-
-          Ukrainian: 'Кабінет 41',
-
-          English: 'Office 41',
-
-        },
-
+        id: "Кабінет 41",
         number: 41,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 2044,
-
         y: 3012,
-
         width: 202,
-
         height: 160,
-
         corridor: 1,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "41", English: "41" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-    ]
-  },
-  
-  corridor2:{
-    name: "Коридор 2",
-    rooms: [
       createRoom({
-        id: 'stairsrotunda1',
+        id: "stairsrotunda1",
         category: 'stairs',
         x: 2388,
         y: 2444,
@@ -355,9 +85,11 @@ export const corridorGroupsFloor3: FloorCorridorGroups = {
         height: 113,
         rotation: -46,
         corridor: 2,
+        text: { OnDefault: { Ukrainian: "stairsrotunda1", English: "stairsrotunda1" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
       createRoom({
-        id: 'stairsrotunda2',
+        id: "stairsrotunda2",
         category: 'stairs',
         x: 2215,
         y: 2622,
@@ -365,1703 +97,498 @@ export const corridorGroupsFloor3: FloorCorridorGroups = {
         height: 114,
         rotation: -42,
         corridor: 2,
+        text: { OnDefault: { Ukrainian: "stairsrotunda2", English: "stairsrotunda2" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
       createRoom({
-
-        id: {
-
-          Ukrainian: 'Кабінет 40',
-
-          English: 'Office 40',
-
-        },
-
+        id: "Кабінет 40",
         number: 40,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: 'Викладацька',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 2280,
-
         y: 2976,
-
         width: 160,
-
         height: 120,
-
-        corridor: 2,
-        
         rotation: 47,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        corridor: 2,
+        text: { OnDefault: { Ukrainian: "40 - Викладацька", English: "40 - Викладацька" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-
-        id: {
-
-          Ukrainian: 'Кабінет 39',
-
-          English: 'Office 39',
-
-        },
-
+        id: "Кабінет 39",
         number: 39,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: 'Лабораторія захисту рослин',
-
-            English: 'Plant Protection Laboratory',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 2370,
-
         y: 2906,
-
         width: 238,
-
         height: 116,
-
-        corridor: 2,
-        
         rotation: 46,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
-      }),
-
-      createRoom({
-
-        id: {
-
-          Ukrainian: 'Кабінет 38',
-
-          English: 'Office 38',
-
-        },
-
-        number: 38,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: 'ВИКЛАДАЦЬКА',
-            English: 'Teaching Department',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
-        x: 2620,
-
-        y: 2642,
-
-        width: 210,
-
-        height: 120,
-
         corridor: 2,
-        
+        text: { OnDefault: { Ukrainian: "39 - Лабораторія захисту рослин", English: "39 - Лабораторія захисту рослин" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+      createRoom({
+        id: "Кабінет 38",
+        number: 38,
+        category: 'regular',
+        x: 2620,
+        y: 2642,
+        width: 210,
+        height: 120,
         rotation: 45,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        corridor: 2,
+        text: { OnDefault: { Ukrainian: "ВИКЛАДАЦЬКА", English: "ВИКЛАДАЦЬКА" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-    ]
-  },
-
-  corridor3:{
-  name: "Коридор 3",
-
-  rooms: [
-    createRoom({
-
-        id: {
-
-          Ukrainian: 'Кабінет 1004',
-
-          English: 'Office 1004',
-
-        },
-
-        number: 1004,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: 'Актова зала',
-
-            English: 'Assembly Hall',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+      createRoom({
+        id: "Кабінет 1004",
+        number: 10042,
+        category: 'regular',
         x: 586,
-
         y: 2490,
-
         width: 290,
-
         height: 500,
-
         rotation: -17,
-
         corridor: 3,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
-    }),
-
-    createRoom({
-
-      id: 'stairs3',
-
-      x: 536,
-
-      y: 3114,
-
-      width: 174,
-
-      height: 136,
-
-      rotation: -17,
-
-      category: 'stairs',
-
-      corridor: 3,
-
-      corridorEntrySide: 'top'
-
-    }),
-    ]
-  },
-
-  corridor4:{
-    name: "Коридор 4",
-  
-    rooms: [
-      createRoom({
-  
-          id: {
-  
-            Ukrainian: 'Кабінет 90',
-  
-            English: 'Office 90',
-  
-          },
-
-          number: 90,
-          text: {
-  
-            OnDefault: {
-  
-              Ukrainian: '',
-  
-              English: '',
-  
-            },
-  
-            OnHover: {
-  
-              Ukrainian: 'Деканат економічного факультету',
-  
-              English: 'Dean’s Office of the Economic Faculty',
-  
-              Time: {
-  
-                Ukrainian: "",
-  
-                English: ""
-  
-              }
-  
-            }
-  
-          },
-  
-          x: 598,
-  
-          y: 1616,
-  
-          width: 158,
-  
-          height: 320,
-  
-          rotation: 1,
-  
-          corridor: 4,
-  
-          corridorEntrySide: 'top',
-  
-          styleOverrides: {}
-  
+        text: { OnDefault: { Ukrainian: "Актова зала", English: "Актова зала" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-  
       createRoom({
-  
-        id: {
-
-          Ukrainian: 'Кабінет 92',
-
-          English: 'Office 92',
-
-        },
-
+        id: "stairs3",
+        category: 'stairs',
+        x: 536,
+        y: 3114,
+        width: 174,
+        height: 136,
+        rotation: -17,
+        corridor: 3,
+        text: { OnDefault: { Ukrainian: "stairs3", English: "stairs3" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+      createRoom({
+        id: "Кабінет 92",
         number: 92,
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 598,
-
         y: 1942,
-
         width: 158,
-
         height: 118,
-
         rotation: 1,
-
         corridor: 4,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "92", English: "92" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
-
       createRoom({
-  
-        id: {
-
-          Ukrainian: 'Кабінет 93',
-
-          English: 'Office 93',
-
-        },
-
+        id: "Кабінет 93",
         number: 93,
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 358,
-
         y: 1670,
-
         width: 158,
-
         height: 320,
-
         rotation: 1,
-
         corridor: 4,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "93", English: "93" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-  
-        id: {
-
-          Ukrainian: 'Кабінет 84',
-
-          English: 'Office 84',
-
-        },
-
-        number: 84,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        id: "Кабінет 95",
+        number: 95,
+        category: 'regular',
         x: 362,
-
         y: 1490,
-
         width: 158,
-
         height: 164,
-
         rotation: 1,
-
         corridor: 4,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "95", English: "95" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-  
-        id: {
-
-          Ukrainian: 'Кабінет 85',
-
-          English: 'Office 85',
-
-        },
-
-        number: 85,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
-        x: 364,
-
-        y: 1306,
-
-        width: 158,
-
-        height: 178,
-
-        rotation: 1,
-
-        corridor: 4,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
-      }),
-
-
-      createRoom({
-  
-        id: {
-
-          Ukrainian: 'Кабінет 99',
-
-          English: 'Office 99',
-
-        },
-
-        number: 99,
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: 'Кафедра інформатики',
-
-            English: 'Department of Computer Science',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        id: "Кафедра Інформатики",
+        category: 'regular',
         x: 366,
-
         y: 1144,
-
         width: 158,
-
         height: 144,
-
         rotation: 1,
-
         corridor: 4,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "Кафедра інформатики", English: "Кафедра інформатики" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-  
-        id: {
-
-          Ukrainian: 'Кабінет 99',
-
-          English: 'Office 99',
-
-        },
-
+        id: "Кабінет 99",
         number: 99,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 608,
-
         y: 1074,
-
         width: 158,
-
         height: 186,
-
         rotation: 1,
-
         corridor: 4,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "99", English: "99" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-  
-        id: {
-
-          Ukrainian: 'Кабінет 100',
-
-          English: 'Office 100',
-
-        },
-
+        id: "Кабінет 100",
         number: 100,
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 606,
-
         y: 1266,
-
         width: 158,
-
         height: 80,
-
         rotation: 1,
-
         corridor: 4,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "100", English: "100" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-
-        id: 'stairs1',
-  
+        id: "stairs1",
+        category: 'stairs',
         x: 368,
-  
         y: 1072,
-  
         width: 158,
-  
         height: 56,
-  
         rotation: 1,
-  
-        category: 'stairs',
-  
         corridor: 4,
-  
-        corridorEntrySide: 'top'
-  
+        text: { OnDefault: { Ukrainian: "stairs1", English: "stairs1" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-
-        id: 'stairs2',
-  
+        id: "stairs2",
+        category: 'stairs',
         x: 604,
-  
         y: 1362,
-  
         width: 158,
-  
         height: 238,
-  
         rotation: 1,
-  
-        category: 'stairs',
-  
         corridor: 4,
-  
-        corridorEntrySide: 'top'
-  
+        text: { OnDefault: { Ukrainian: "stairs2", English: "stairs2" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-      ]
-  },
-
-  corridor5:{
-    name: "Коридор 5",
-  
-    rooms: [
       createRoom({
-  
-          id: {
-  
-            Ukrainian: 'Кабінет 133',
-  
-            English: 'Office 133',
-  
-          },
-  
-          number: 133,
-          text: {
-  
-            OnDefault: {
-  
-              Ukrainian: 'Кафедра публічного управління, адміністрування та міжнародної економіки',
-  
-              English: 'Department of Public Administration and International Economics',
-  
-            },
-  
-            OnHover: {
-  
-              Ukrainian: '',
-  
-              English: '',
-  
-              Time: {
-  
-                Ukrainian: "",
-  
-                English: ""
-  
-              }
-  
-            }
-  
-          },
-  
-          x: 668,
-  
-          y: 516,
-  
-          width: 98,
-  
-          height: 158,
-  
-          corridor: 5,
-  
-          corridorEntrySide: 'top',
-  
-          styleOverrides: {}
-  
-      }),
-  
-      createRoom({
-  
-        id: {
-
-          Ukrainian: 'Кабінет 132',
-
-          English: 'Office 132',
-
-        },
-
-        number: 132,
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        id: "Кафедра публічного управління",
+        category: 'regular',
         x: 668,
-  
-        y: 372,
-  
+        y: 516,
         width: 98,
-  
-        height: 140,
-
-        corridor: 5,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
-      }),
-
-      createRoom({
-  
-        id: {
-
-          Ukrainian: 'Кабінет 131',
-
-          English: 'Office 131',
-
-        },
-
-        number: 131,
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
-        x: 672,
-  
-        y: 210,
-  
-        width: 98,
-  
-        height: 156,
-
-        rotation: 0.5,
-
-        corridor: 5,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
-      }),
-
-      createRoom({
-  
-        id: {
-
-          Ukrainian: 'Кабінет 119',
-
-          English: 'Office 119',
-
-        },
-
-        number: 130,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: 'Кафедра фінансів, банківської справи та страхуання',
-
-            English: 'Department of Finance, Banking and Insurance',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
-        x: 672,
-  
-        y: 50,
-  
-        width: 98,
-  
-        height: 152,
-
-        corridor: 5,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
-      }),
-
-      createRoom({
-  
-        id: {
-
-          Ukrainian: 'Кабінет 129',
-
-          English: 'Office 129',
-
-        },
-
-        number: 129,
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
-        x: 616,
-  
-        y: 48,
-  
-        width: 44,
-  
-        height: 94,
-
-        corridor: 5,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
-      }),
-
-      createRoom({
-  
-        id: {
-
-          Ukrainian: 'Кабінет 128',
-
-          English: 'Office 128',
-
-        },
-
-        number: 128,
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
-        x: 370,
-  
-        y: 46,
-  
-        width: 242,
-  
-        height: 122,
-
-        rotation: 1.2,
-
-        corridor: 5,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
-      }),
-
-      createRoom({
-
-        id: 'stairs5',
-  
-        x: 670,
-  
-        y: 680,
-
-        width: 98,
-
         height: 158,
-
         corridor: 5,
-  
+        text: { OnDefault: { Ukrainian: "Кафедра публічного управління, адміністрування та міжнародної економіки", English: "Кафедра публічного управління, адміністрування та міжнародної економіки" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+      createRoom({
+        id: "Кабінет 132",
+        number: 132,
+        category: 'regular',
+        x: 668,
+        y: 372,
+        width: 98,
+        height: 140,
+        corridor: 5,
+        text: { OnDefault: { Ukrainian: "132", English: "132" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+      createRoom({
+        id: "Кабінет 131",
+        number: 131,
+        category: 'regular',
+        x: 672,
+        y: 210,
+        width: 98,
+        height: 156,
+        rotation: 1,
+        corridor: 5,
+        text: { OnDefault: { Ukrainian: "131", English: "131" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+      createRoom({
+        id: "Кабінет 130",
+        number: 130,
+        category: 'regular',
+        x: 672,
+        y: 50,
+        width: 98,
+        height: 152,
+        corridor: 5,
+        text: { OnDefault: { Ukrainian: "Кафедра фінансів, банківської справи та страхуання", English: "Кафедра фінансів, банківської справи та страхуання" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+      createRoom({
+        id: "Кабінет 129",
+        number: 129,
+        category: 'regular',
+        x: 616,
+        y: 48,
+        width: 44,
+        height: 94,
+        corridor: 5,
+        text: { OnDefault: { Ukrainian: "129", English: "129" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+      createRoom({
+        id: "Кабінет 128",
+        number: 128,
+        category: 'regular',
+        x: 370,
+        y: 46,
+        width: 242,
+        height: 122,
+        rotation: 1,
+        corridor: 5,
+        text: { OnDefault: { Ukrainian: "128", English: "128" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+      createRoom({
+        id: "stairs5",
         category: 'stairs',
-  
-        corridorEntrySide: 'top'
-  
+        x: 670,
+        y: 680,
+        width: 98,
+        height: 158,
+        corridor: 5,
+        text: { OnDefault: { Ukrainian: "stairs5", English: "stairs5" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-  
-        id: {
-
-          Ukrainian: 'Кабінет 133a',
-
-          English: 'Office 133a',
-
-        },
-
+        id: "Кабінет 133",
         number: 133,
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 510,
-
         y: 754,
-
         width: 98,
-
         height: 82,
-
         rotation: 1,
-
         corridor: 5,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "133", English: "133" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-  
-        id: {
-
-          Ukrainian: 'Кабінет 123',
-
-          English: 'Office 123',
-
-        },
-
+        id: "Кабінет 123",
         number: 123,
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 510,
-
         y: 532,
-
         width: 98,
-
         height: 216,
-
-        rotation: 0,
-
         corridor: 5,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "123", English: "123" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-  
-        id: {
-
-          Ukrainian: 'Кабінет 125',
-
-          English: 'Office 125',
-
-        },
-
+        id: "Кабінет 125",
         number: 125,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 514,
-
         y: 448,
-
         width: 94,
-
         height: 80,
-
         rotation: 1,
-
         corridor: 5,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "125", English: "125" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-  
-        id: {
-
-          Ukrainian: 'Кабінет 126',
-
-          English: 'Office 126',
-
-        },
-
+        id: "Кабінет 126",
         number: 126,
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 514,
-
         y: 300,
-
         width: 96,
-
         height: 142,
-
         rotation: 1,
-
         corridor: 5,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "126", English: "126" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-  
-        id: {
-
-          Ukrainian: 'Кабінет 124',
-
-          English: 'Office 124',
-
-        },
-
+        id: "Кабінет 124",
         number: 124,
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 514,
-
         y: 222,
-
         width: 96,
-
         height: 70,
-
         rotation: 1,
-
         corridor: 5,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "124", English: "124" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-      ]
-  },
-
-  corridor6:{
-    name: "Коридор 6",
-    rooms: [
       createRoom({
-
-        id: {
-
-          Ukrainian: 'Кабінет 35',
-
-          English: 'Office 35',
-
-        },
-
+        id: "Кабінет 35",
         number: 35,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: 'Викладацька/лабораторія',
-            English: 'Teaching/Laboratory',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 2778,
-
         y: 2266,
-
         width: 152,
-
         height: 194,
-
         corridor: 6,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "Викладацька/лабораторія", English: "Викладацька/лабораторія" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-
-        id: {
-
-          Ukrainian: 'Кабінет 34',
-
-          English: 'Office 34',
-
-        },
-
+        id: "Кабінет 34",
         number: 34,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 2778,
-
         y: 2128,
-
         width: 152,
-
         height: 134,
-
         corridor: 6,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "34", English: "34" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-
-        id: {
-
-          Ukrainian: 'Кабінет 33',
-
-          English: 'Office 33',
-
-        },
-
+        id: "Кабінет 33",
         number: 33,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 2778,
-
         y: 1912,
-
         width: 152,
-
         height: 202,
-
         corridor: 6,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "33", English: "33" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-
       createRoom({
-
-        id: {
-
-          Ukrainian: 'Кабінет 32',
-
-          English: 'Office 32',
-
-        },
-
+        id: "Кабінет 32",
         number: 32,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 2778,
-
         y: 1620,
-
         width: 152,
-
         height: 284,
-
         corridor: 6,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "32", English: "32" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-      
       createRoom({
-
-        id: {
-
-          Ukrainian: 'Кабінет 31',
-
-          English: 'Office 31',
-
-        },
-
+        id: "Кабінет 31",
         number: 31,
-
-        text: {
-
-          OnDefault: {
-
-            Ukrainian: '',
-            English: '',
-
-          },
-
-          OnHover: {
-
-            Ukrainian: '',
-
-            English: '',
-
-            Time: {
-
-              Ukrainian: "",
-
-              English: ""
-
-            }
-
-          }
-
-        },
-
+        category: 'regular',
         x: 2628,
-
         y: 1394,
-
         width: 300,
-
         height: 210,
-
         corridor: 6,
-
-        corridorEntrySide: 'top',
-
-        styleOverrides: {}
-
+        text: { OnDefault: { Ukrainian: "31", English: "31" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
-    ]
+      createRoom({
+        id: "new_r80",
+        category: 'regular',
+        x: 1626,
+        y: 3015,
+        width: 65,
+        height: 156,
+        corridor: 1,
+        text: { OnDefault: { Ukrainian: "43", English: "43" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+      createRoom({
+        id: "evac_exit_f3",
+        category: 'regular',
+        x: 416,
+        y: 221,
+        width: 90,
+        height: 85,
+        rotation: 1,
+        corridor: 1,
+        text: { OnDefault: { Ukrainian: "Евакуаційний вихід", English: "Евакуаційний вихід" } },
+        imgSrc: './src/Sprite/Stairs-icon.svg',
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+      createRoom({
+        id: "new_r84",
+        category: 'regular',
+        x: 366,
+        y: 217,
+        width: 47,
+        height: 90,
+        rotation: 1,
+        corridor: 1,
+        text: { OnDefault: { Ukrainian: "Туалет", English: "Туалет" } },
+        imgSrc: './src/Sprite/WC-icon.svg',
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+      createRoom({
+        id: "Кабінет 46",
+        number: 46,
+        category: 'regular',
+        x: 1257,
+        y: 3016,
+        width: 80,
+        height: 157,
+        corridor: 1,
+        text: { OnDefault: { Ukrainian: "46", English: "46" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+      createRoom({
+        id: "new_r88",
+        category: 'regular',
+        x: 1170,
+        y: 2749,
+        width: 80,
+        height: 158,
+        corridor: 1,
+        text: { OnDefault: { Ukrainian: "49 - Завідувач Кафедри Технологій в Рослинництві", English: "49 - Завідувач Кафедри Технологій в Рослинництві" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+      createRoom({
+        id: "new_r90",
+        category: 'regular',
+        x: 1171,
+        y: 3016,
+        width: 77,
+        height: 162,
+        corridor: 1,
+        text: { OnDefault: { Ukrainian: "Евакуаційний вихід 3 поверхСадівництво", English: "Евакуаційний вихід 3 поверхСадівництво" } },
+        imgSrc: './src/Sprite/Stairs-icon.svg',
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+      createRoom({
+        id: "new_r93",
+        category: 'regular',
+        x: 368,
+        y: 1305,
+        width: 160,
+        height: 90,
+        corridor: 1,
+        text: { OnDefault: { Ukrainian: "97", English: "97" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+      createRoom({
+        id: "new_r94",
+        category: 'regular',
+        x: 366,
+        y: 1397,
+        width: 160,
+        height: 90,
+        corridor: 1,
+        text: { OnDefault: { Ukrainian: "96", English: "96" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+      createRoom({
+        id: "new_r0",
+        category: 'regular',
+        x: 598,
+        y: 1614,
+        width: 160,
+        height: 100,
+        corridor: 1,
+        text: { OnDefault: { Ukrainian: "90", English: "90" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+      createRoom({
+        id: "new_r1",
+        category: 'regular',
+        x: 601,
+        y: 1718,
+        width: 155,
+        height: 220,
+        corridor: 1,
+        text: { OnDefault: { Ukrainian: "Деканат", English: "Деканат" } },
+        styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
+      }),
+    ],
   },
-}
+};

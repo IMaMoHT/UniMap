@@ -1,10 +1,15 @@
-﻿import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './SetARoute.css';
 import RouteInput from './RouteInput';
 import RouteButton from './RouteButton';
 import routeService from '../../../services/RouteService';
 import roomHighlightService from '../../../services/RoomHighlightService';
-import { getSquaresConfigForFloor, regularRooms } from '../../../config/positionedElements';
+import {
+  getSquaresConfigForFloor,
+  selectableRoomsById,
+  type SelectableRoom,
+} from '../../../config/positionedElements';
+import { readDeepLinkParams } from '../../../utils/deepLink';
 
 interface SetARouteProps {
   onRouteBuild?: (from: string, to: string) => void;
@@ -25,36 +30,85 @@ const SetARoute: React.FC<SetARouteProps> = ({ onRouteBuild, activeFloor, onFloo
   const [fromValue, setFromValue] = useState('');
   const [toValue, setToValue] = useState('');
   const [routeInfo, setRouteInfo] = useState<RouteInfo | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [deepLinkNotice, setDeepLinkNotice] = useState<string | null>(null);
+  const deepLinkApplied = useRef(false);
 
-  const getRoomInfo = (roomId: string) => regularRooms.find((room) => room.id === roomId);
+  const getRoomInfo = (roomId: string): SelectableRoom | undefined => selectableRoomsById.get(roomId);
+
+  const buildRoute = useCallback(
+    (fromId: string, toId: string) => {
+      const fromRoom = selectableRoomsById.get(fromId);
+      const toRoom = selectableRoomsById.get(toId);
+      if (!fromRoom || !toRoom) {
+        setError('Не вдалося знайти обрані приміщення.');
+        return;
+      }
+
+      try {
+        // Кімнати з обох поверхів — щоб RouteService бачив і старт, і фініш
+        const allFloorRooms = [
+          ...getSquaresConfigForFloor(fromRoom.floor),
+          ...getSquaresConfigForFloor(toRoom.floor),
+        ];
+
+        const route = routeService.buildRoute(fromId, toId, allFloorRooms);
+        if (!route) {
+          setError('Маршрут не побудовано: між цими точками немає зв’язку на карті.');
+          return;
+        }
+
+        setError(null);
+        setRouteInfo({
+          fromId,
+          toId,
+          fromFloor: fromRoom.floor,
+          toFloor: toRoom.floor,
+        });
+        roomHighlightService.highlightRooms([fromId, toId], { color: ROUTE_HIGHLIGHT_COLOR });
+
+        if (fromRoom.floor !== toRoom.floor) {
+          onFloorChange?.(fromRoom.floor);
+        }
+
+        onRouteBuild?.(fromId, toId);
+      } catch (err) {
+        console.error('SetARoute: помилка побудови маршруту', err);
+        setError('Сталася помилка під час побудови маршруту. Спробуйте ще раз.');
+      }
+    },
+    [onFloorChange, onRouteBuild],
+  );
+
+  // --- QR deep-link: ?start=<roomId>&to=<roomId> ---
+  useEffect(() => {
+    if (deepLinkApplied.current) return;
+    deepLinkApplied.current = true;
+
+    const params = readDeepLinkParams();
+    if (params.hadUnknownTarget) {
+      setDeepLinkNotice('QR-код вказує на невідоме приміщення — оберіть точку вручну.');
+    }
+    if (!params.startRoomId) return;
+
+    setFromValue(params.startRoomId);
+    if (typeof params.floor === 'number') onFloorChange?.(params.floor);
+
+    const startLabel = selectableRoomsById.get(params.startRoomId)?.label;
+    if (startLabel && !params.destinationRoomId) {
+      setDeepLinkNotice(`Ви тут: ${startLabel}. Оберіть, куди прокласти маршрут.`);
+    }
+
+    if (params.destinationRoomId && params.destinationRoomId !== params.startRoomId) {
+      setToValue(params.destinationRoomId);
+      buildRoute(params.startRoomId, params.destinationRoomId);
+    }
+  }, [buildRoute, onFloorChange]);
 
   const handleRouteBuild = () => {
     if (!fromValue || !toValue || fromValue === toValue) return;
-
-    const fromRoom = getRoomInfo(fromValue);
-    const toRoom = getRoomInfo(toValue);
-    if (!fromRoom || !toRoom) return;
-
-    const allFloorRooms = [
-      ...getSquaresConfigForFloor(fromRoom.floor),
-      ...getSquaresConfigForFloor(toRoom.floor),
-    ];
-
-    routeService.buildRoute(fromValue, toValue, allFloorRooms);
-
-    setRouteInfo({
-      fromId: fromValue,
-      toId: toValue,
-      fromFloor: fromRoom.floor,
-      toFloor: toRoom.floor,
-    });
-    roomHighlightService.highlightRooms([fromValue, toValue], { color: ROUTE_HIGHLIGHT_COLOR });
-
-    if (fromRoom.floor !== toRoom.floor && onFloorChange) {
-      onFloorChange(fromRoom.floor);
-    }
-
-    onRouteBuild?.(fromValue, toValue);
+    setDeepLinkNotice(null);
+    buildRoute(fromValue, toValue);
   };
 
   const handleClearRoutes = () => {
@@ -63,53 +117,61 @@ const SetARoute: React.FC<SetARouteProps> = ({ onRouteBuild, activeFloor, onFloo
     setRouteInfo(null);
     setFromValue('');
     setToValue('');
+    setError(null);
+    setDeepLinkNotice(null);
   };
 
   const fromRoomInfo = routeInfo ? getRoomInfo(routeInfo.fromId) : null;
   const toRoomInfo = routeInfo ? getRoomInfo(routeInfo.toId) : null;
-  const showCrossFloorHint =
-    routeInfo && fromRoomInfo && toRoomInfo && routeInfo.fromFloor !== routeInfo.toFloor;
+  const showCrossFloorHint = Boolean(
+    routeInfo && fromRoomInfo && toRoomInfo && routeInfo.fromFloor !== routeInfo.toFloor,
+  );
   const currentFloor = typeof activeFloor === 'number' ? activeFloor : routeInfo?.fromFloor;
-  const isShowingDestination = showCrossFloorHint && currentFloor === routeInfo.toFloor;
-  const currentRoom = showCrossFloorHint
-    ? (isShowingDestination ? toRoomInfo : fromRoomInfo)
-    : null;
-  const nextRoom = showCrossFloorHint
-    ? (isShowingDestination ? fromRoomInfo : toRoomInfo)
-    : null;
+  const isShowingDestination = showCrossFloorHint && currentFloor === routeInfo?.toFloor;
+  const currentRoom = showCrossFloorHint ? (isShowingDestination ? toRoomInfo : fromRoomInfo) : null;
+  const nextRoom = showCrossFloorHint ? (isShowingDestination ? fromRoomInfo : toRoomInfo) : null;
   const nextFloor = showCrossFloorHint
-    ? (isShowingDestination ? routeInfo.fromFloor : routeInfo.toFloor)
+    ? (isShowingDestination ? routeInfo?.fromFloor ?? null : routeInfo?.toFloor ?? null)
     : null;
   const actionLabel = isShowingDestination ? 'Щоб повернутися до' : 'Щоб побачити';
 
   return (
     <div className="SetARoute">
       <span className="SetARoute-title">Прокласти маршрут:</span>
-      <RouteInput 
+      <RouteInput
         fromValue={fromValue}
         toValue={toValue}
         onFromChange={setFromValue}
         onToChange={setToValue}
       />
       <div className="route-controls">
-        <RouteButton 
+        <RouteButton
           onClick={handleRouteBuild}
           disabled={!fromValue || !toValue || fromValue === toValue}
         />
-        <button 
-          className="clear-routes-btn"
-          onClick={handleClearRoutes}
-          type="button"
-        >
+        <button className="clear-routes-btn" onClick={handleClearRoutes} type="button">
           Очистити
         </button>
       </div>
+
+      {deepLinkNotice && (
+        <div className="route-hint" role="status">
+          <span className="route-hint__text">{deepLinkNotice}</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="route-hint route-hint--error" role="alert">
+          <span className="route-hint__text">{error}</span>
+        </div>
+      )}
+
       {showCrossFloorHint && currentRoom && nextRoom && nextFloor !== null && (
         <div className="route-hint" role="status">
           <span className="route-hint__title">Маршрут між поверхами</span>
           <span className="route-hint__text">
-            Показано: кабінет <strong>{currentRoom.number}</strong> ({currentRoom.floor} поверх). {actionLabel} кабінет{' '}
-            <strong>{nextRoom.number}</strong> на <strong>{nextFloor}</strong> поверсі.
+            Показано: <strong>{currentRoom.label}</strong> ({currentRoom.floor} поверх). {actionLabel}{' '}
+            <strong>{nextRoom.label}</strong> на <strong>{nextFloor}</strong> поверсі.
           </span>
           <button
             type="button"
@@ -124,7 +186,4 @@ const SetARoute: React.FC<SetARouteProps> = ({ onRouteBuild, activeFloor, onFloo
   );
 };
 
-export default SetARoute; 
-
-
-
+export default SetARoute;

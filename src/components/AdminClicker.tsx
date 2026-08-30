@@ -6,7 +6,7 @@ interface AdminClickerProps {
   activeFloor: number;
   nodes: { id: string; x: number; y: number; floor: number; roomId?: string }[];
   edges: { from: string; to: string; floor: number }[];
-  mode: 'off' | 'nodes' | 'edges' | 'rooms' | 'delnode' | 'scenery' | 'building';
+  mode: 'off' | 'nodes' | 'edges' | 'rooms' | 'delnode' | 'scenery' | 'building' | 'polygons' | 'qr';
   currentRoomId: string;
   selectedNodeId: string | null;
   draggingNodeId: string | null;

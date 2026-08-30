@@ -15,6 +15,12 @@ export interface PositionedElementConfig {
   // If provided, the element should render an image sprite instead of a colored box
   imgSrc?: string; // path to sprite (e.g., './src/Sprite/stair.png')
   category?: 'regular' | 'toilet' | 'stairs' | 'buffet';
+  /**
+   * true  — показувати лише іконку, без підпису (вбиральні, сходи, буфет);
+   * false — примусово показувати підпис навіть за наявності іконки.
+   * Якщо не задано, застосовується автоматичне правило (див. PositionedElementsRenderer).
+   */
+  iconOnly?: boolean;
   text?: {
     Ukrainian?: string;
     English?: string;

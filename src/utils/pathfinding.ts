@@ -76,12 +76,52 @@ export function findNodeByRoomId(roomId: string, nodes: MapNode[]): MapNode | nu
   return nodes.find((node) => node.roomId === roomId) ?? null;
 }
 
+/** Відсіює вузли з некоректними координатами/поверхом — щоб NaN не «отруїв» граф. */
+export function sanitizeNodes(nodes: unknown): MapNode[] {
+  if (!Array.isArray(nodes)) return [];
+  const seen = new Set<string>();
+  const result: MapNode[] = [];
+  for (const node of nodes) {
+    if (!node || typeof node !== 'object') continue;
+    const { id, x, y, floor, roomId } = node as Partial<MapNode>;
+    if (typeof id !== 'string' || !id) continue;
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(floor)) continue;
+    if (seen.has(id)) continue; // дублікат id зламав би відновлення шляху
+    seen.add(id);
+    result.push({ id, x: x as number, y: y as number, floor: floor as number, roomId });
+  }
+  return result;
+}
+
+/** Лишає лише ребра, обидва кінці яких існують і не збігаються. */
+export function sanitizeEdges(edges: unknown, nodes: MapNode[]): MapEdge[] {
+  if (!Array.isArray(edges)) return [];
+  const ids = new Set(nodes.map((node) => node.id));
+  const result: MapEdge[] = [];
+  const seen = new Set<string>();
+  for (const edge of edges) {
+    if (!edge || typeof edge !== 'object') continue;
+    const { from, to, floor } = edge as Partial<MapEdge>;
+    if (typeof from !== 'string' || typeof to !== 'string') continue;
+    if (from === to || !ids.has(from) || !ids.has(to)) continue;
+    const key = from < to ? `${from}|${to}` : `${to}|${from}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push({ from, to, floor: Number.isFinite(floor) ? (floor as number) : 1 });
+  }
+  return result;
+}
+
 export function dijkstra(
   startNodeId: string,
   endNodeId: string,
   nodes: MapNode[],
   edges: MapEdge[],
 ): PathResult | null {
+  if (!startNodeId || !endNodeId || !Array.isArray(nodes) || nodes.length === 0) {
+    return null;
+  }
+
   if (startNodeId === endNodeId) {
     const node = nodes.find((entry) => entry.id === startNodeId);
     return node ? { nodeIds: [startNodeId], nodes: [node], totalDistance: 0 } : null;
@@ -137,8 +177,11 @@ export function dijkstra(
 
   const nodeIds: string[] = [];
   let currentId: string | null = endNodeId;
+  // Захист від зациклення, якщо previous колись стане неконсистентним
+  const guard = new Set<string>();
 
-  while (currentId) {
+  while (currentId && !guard.has(currentId)) {
+    guard.add(currentId);
     nodeIds.unshift(currentId);
     currentId = previous.get(currentId) ?? null;
   }
