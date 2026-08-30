@@ -92,3 +92,20 @@
 .route-hint__switch:hover {
   background: #2d8a84;
 }
+
+/* Підказка про вибір аудиторій кліком по карті */
+.SetARoute-hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #6b7280;
+}
+
+.route-hint--error {
+  border-color: #f5b5b5;
+  background: #fff5f5;
+}
+
+.route-hint--error .route-hint__text {
+  color: #b42318;
+}

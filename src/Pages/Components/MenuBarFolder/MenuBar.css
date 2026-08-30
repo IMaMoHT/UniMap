@@ -305,3 +305,14 @@
 .search-hint {
   margin-top: 8px;
 }
+
+/* Кнопки "Звідси / Сюди" під результатом пошуку */
+.search-hint__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.search-hint__actions .route-hint__switch {
+  flex: 1;
+}

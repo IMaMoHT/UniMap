@@ -10,6 +10,7 @@ import {
   type SelectableRoom,
 } from '../../../config/positionedElements';
 import { readDeepLinkParams } from '../../../utils/deepLink';
+import routeSelectionService from '../../../services/RouteSelectionService';
 
 interface SetARouteProps {
   onRouteBuild?: (from: string, to: string) => void;
@@ -91,7 +92,8 @@ const SetARoute: React.FC<SetARouteProps> = ({ onRouteBuild, activeFloor, onFloo
     }
     if (!params.startRoomId) return;
 
-    setFromValue(params.startRoomId);
+    // Пишемо в спільний сервіс — підписка нижче сама оновить поля й побудує маршрут
+    routeSelectionService.setFrom(params.startRoomId);
     if (typeof params.floor === 'number') onFloorChange?.(params.floor);
 
     const startLabel = selectableRoomsById.get(params.startRoomId)?.label;
@@ -100,10 +102,37 @@ const SetARoute: React.FC<SetARouteProps> = ({ onRouteBuild, activeFloor, onFloo
     }
 
     if (params.destinationRoomId && params.destinationRoomId !== params.startRoomId) {
-      setToValue(params.destinationRoomId);
-      buildRoute(params.startRoomId, params.destinationRoomId);
+      routeSelectionService.setTo(params.destinationRoomId);
     }
-  }, [buildRoute, onFloorChange]);
+  }, [onFloorChange]);
+
+  /**
+   * Синхронізація зі спільним сервісом вибору: клік по аудиторії на карті або
+   * вибір у пошуку одразу відображається в полях «Звідки/Куди», а щойно обидві
+   * точки задані — маршрут будується сам, без натискання кнопки.
+   */
+  useEffect(
+    () =>
+      routeSelectionService.subscribe(({ fromId, toId }) => {
+        setFromValue(fromId ?? '');
+        setToValue(toId ?? '');
+
+        if (fromId && toId && fromId !== toId) {
+          setDeepLinkNotice(null);
+          buildRoute(fromId, toId);
+        } else {
+          // одна точка або жодної — прибираємо стару лінію, лишаємо підсвітку
+          routeService.clearRoutes();
+          setRouteInfo(null);
+          setError(null);
+          roomHighlightService.highlightRooms(
+            [fromId, toId].filter((id): id is string => Boolean(id)),
+            { color: ROUTE_HIGHLIGHT_COLOR },
+          );
+        }
+      }),
+    [buildRoute],
+  );
 
   const handleRouteBuild = () => {
     if (!fromValue || !toValue || fromValue === toValue) return;
@@ -114,6 +143,7 @@ const SetARoute: React.FC<SetARouteProps> = ({ onRouteBuild, activeFloor, onFloo
   const handleClearRoutes = () => {
     routeService.clearRoutes();
     roomHighlightService.clearHighlight();
+    routeSelectionService.clear();
     setRouteInfo(null);
     setFromValue('');
     setToValue('');
@@ -141,9 +171,10 @@ const SetARoute: React.FC<SetARouteProps> = ({ onRouteBuild, activeFloor, onFloo
       <RouteInput
         fromValue={fromValue}
         toValue={toValue}
-        onFromChange={setFromValue}
-        onToChange={setToValue}
+        onFromChange={(id) => routeSelectionService.setFrom(id || null)}
+        onToChange={(id) => routeSelectionService.setTo(id || null)}
       />
+      <p className="SetARoute-hint">Або просто натисніть на аудиторію на карті: перша — «Звідки», друга — «Куди».</p>
       <div className="route-controls">
         <RouteButton
           onClick={handleRouteBuild}

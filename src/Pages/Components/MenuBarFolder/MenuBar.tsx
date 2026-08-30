@@ -9,7 +9,9 @@ import SetARoute from '../SetARoute/SetARoute';
 import SettingsContainer from '../SettingsContainer/SettingsContainer';
 import LupaIcon from '../../../Sprite/Loupe.svg';
 import roomHighlightService from '../../../services/RoomHighlightService';
-import { regularRooms } from '../../../config/positionedElements';
+import routeSelectionService from '../../../services/RouteSelectionService';
+import { selectableRooms, type SelectableRoom } from '../../../config/positionedElements';
+import { sanitizeText } from '../../../utils/sanitize';
 
 interface MenuBarProps {
   activeFloor?: number;
@@ -37,23 +39,25 @@ const MenuBar: React.FC<MenuBarProps> = ({ activeFloor: propActiveFloor, onFloor
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
   const [searchSelectedRoomId, setSearchSelectedRoomId] = useState<string | null>(null);
 
-  // Mock data for rooms - replace with actual data from your config
-  const rooms = regularRooms;
+  /**
+   * Пошук по ВСІХ приміщеннях (не лише нумерованих) — за номером і за назвою.
+   * Раніше список брався з `regularRooms`, тож іменовані приміщення
+   * (Бібліотека, Актова зала…) не знаходились взагалі.
+   */
+  const filteredRooms = useMemo<SelectableRoom[]>(() => {
+    const query = sanitizeText(searchQuery, 60).toLowerCase();
+    if (!query) return [];
 
-  // Filter rooms based on search query
-  const filteredRooms = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-
-    return rooms
+    return selectableRooms
       .filter(room =>
-        room.number.toString().includes(searchQuery.trim()) ||
-        room.id.toLowerCase().includes(searchQuery.toLowerCase())
+        room.label.toLowerCase().includes(query) ||
+        (typeof room.number === 'number' && String(room.number).includes(query))
       )
-      .sort((a, b) => a.number - b.number);
-  }, [rooms, searchQuery]);
+      .slice(0, 40);
+  }, [searchQuery]);
 
   const selectedSearchRoom = searchSelectedRoomId
-    ? rooms.find(room => room.id === searchSelectedRoomId) ?? null
+    ? selectableRooms.find(room => room.id === searchSelectedRoomId) ?? null
     : null;
   const showSearchHint = Boolean(selectedSearchRoom);
   const isSearchRoomOnActiveFloor = selectedSearchRoom?.floor === activeFloor;
@@ -62,41 +66,32 @@ const MenuBar: React.FC<MenuBarProps> = ({ activeFloor: propActiveFloor, onFloor
     const value = e.target.value;
     setSearchQuery(value);
     setIsSearchDropdownOpen(value.trim().length > 0);
-    
+
     if (!value.trim()) {
       roomHighlightService.clearHighlight();
       setSearchSelectedRoomId(null);
-      return;
     }
+  };
 
-    if (searchSelectedRoomId) {
-      const selectedRoom = rooms.find(room => room.id === searchSelectedRoomId);
-      if (selectedRoom && selectedRoom.number.toString() !== value.trim()) {
-        roomHighlightService.clearHighlight();
-        setSearchSelectedRoomId(null);
-      }
-    }
+  /** Показати кімнату: підсвітити і перемкнути поверх, якщо вона на іншому. */
+  const revealRoom = (room: SelectableRoom) => {
+    roomHighlightService.highlightRoom(room.id);
+    setSearchQuery(room.label);
+    setSearchSelectedRoomId(room.id);
+    setIsSearchDropdownOpen(false);
+    if (room.floor !== activeFloor) handleFloorChange(room.floor);
   };
 
   const handleSearchSubmit = () => {
     if (filteredRooms.length > 0) {
-      const firstRoom = filteredRooms[0];
-      roomHighlightService.highlightRoom(firstRoom.id);
-      setSearchQuery(firstRoom.number.toString());
-      setSearchSelectedRoomId(firstRoom.id);
-      setIsSearchDropdownOpen(false);
+      revealRoom(filteredRooms[0]);
     } else {
       roomHighlightService.clearHighlight();
       setSearchSelectedRoomId(null);
     }
   };
 
-  const handleRoomSelect = (room: typeof rooms[0]) => {
-    roomHighlightService.highlightRoom(room.id);
-    setSearchQuery(room.number.toString());
-    setSearchSelectedRoomId(room.id);
-    setIsSearchDropdownOpen(false);
-  };
+  const handleRoomSelect = (room: SelectableRoom) => revealRoom(room);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -199,23 +194,35 @@ const MenuBar: React.FC<MenuBarProps> = ({ activeFloor: propActiveFloor, onFloor
                       className="search-dropdown-item"
                       onClick={() => handleRoomSelect(room)}
                     >
-                      <span className="room-number">{room.number}</span>
-                      <span className="room-id">{`\u041a\u0430\u0431\u0456\u043d\u0435\u0442 ${room.number}`}</span>
-                      <span className="corridor">{`\u041a\u043e\u0440\u0438\u0434\u043e\u0440 ${room.corridor}`}</span>
+                      <span className="room-id">{room.label}</span>
+                      <span className="corridor">{room.floor} \u043f\u043e\u0432\u0435\u0440\u0445</span>
                     </div>
                   ))}
                 </div>
               </div>
               {showSearchHint && selectedSearchRoom && (
                 <div className="route-hint search-hint" role="status">
-                  <span className="route-hint__title">Пошук кабінету</span>
+                  <span className="route-hint__title">Знайдено</span>
                   <span className="route-hint__text">
-                    Кабінет <strong>{selectedSearchRoom.number}</strong> — {selectedSearchRoom.floor} поверх
-                    {selectedSearchRoom.corridor ? `, коридор ${selectedSearchRoom.corridor}` : ''}.{' '}
-                    {isSearchRoomOnActiveFloor
-                      ? 'Показано на карті.'
-                      : `Щоб побачити, натисніть ${selectedSearchRoom.floor} поверх.`}
+                    <strong>{selectedSearchRoom.label}</strong> — {selectedSearchRoom.floor} поверх.{' '}
+                    {isSearchRoomOnActiveFloor ? 'Підсвічено на карті.' : ''}
                   </span>
+                  <div className="search-hint__actions">
+                    <button
+                      type="button"
+                      className="route-hint__switch"
+                      onClick={() => routeSelectionService.setFrom(selectedSearchRoom.id)}
+                    >
+                      Звідси
+                    </button>
+                    <button
+                      type="button"
+                      className="route-hint__switch"
+                      onClick={() => routeSelectionService.setTo(selectedSearchRoom.id)}
+                    >
+                      Сюди
+                    </button>
+                  </div>
                 </div>
               )}
             </section>

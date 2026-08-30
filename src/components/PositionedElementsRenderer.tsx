@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { PositionedElementConfig } from '../services/PositionedElementsService';
 import roomHighlightService from '../services/RoomHighlightService';
-import { getSquaresConfigForFloor } from '../config/positionedElements';
+import { getSquaresConfigForFloor, selectableRoomsById } from '../config/positionedElements';
 import { MAP_HEIGHT, MAP_WIDTH } from '../config/mapDimensions';
 import { getRoomLabel } from '../utils/roomLabels';
+import routeSelectionService, { type RouteSelection } from '../services/RouteSelectionService';
 import './PositionedElementsRenderer.css';
 
 interface PositionedElementsRendererProps {
@@ -134,6 +135,10 @@ interface PreparedRoom extends PositionedElementConfig {
   showIconOnly: boolean;
   /** Доступний опис іконки (для скрінрідерів), коли підпис прихований */
   iconAlt?: string;
+  /** Чи можна обрати кімнату як точку маршруту кліком по карті */
+  isSelectable: boolean;
+  /** Людська назва для aria-label */
+  routeLabel: string;
   baseStyle: React.CSSProperties;
   baseCardStyle: React.CSSProperties;
   contentStyle: React.CSSProperties;
@@ -271,17 +276,26 @@ interface RoomElementProps {
   isHighlighted: boolean;
   highlightVars: React.CSSProperties;
   highlightColor: string;
+  /** 'from' — початкова точка маршруту, 'to' — кінцева */
+  routeRole: 'from' | 'to' | null;
+  onPick: (roomId: string) => void;
 }
 
 const RoomElement = React.memo(
-  ({ room, isHighlighted, highlightVars, highlightColor }: RoomElementProps) => {
+  ({ room, isHighlighted, highlightVars, highlightColor, routeRole, onPick }: RoomElementProps) => {
     const rootClassName = [
       'positioned-element',
       room.className,
       room.hasHoverText ? 'positioned-element--has-hover-text' : ''
     ].filter(Boolean).join(' ');
 
-    const cardClassName = `positioned-element__card${isHighlighted ? ' positioned-element__card--highlighted' : ''}`;
+    const cardClassName = [
+      'positioned-element__card',
+      isHighlighted ? 'positioned-element__card--highlighted' : '',
+      routeRole === 'from' ? 'positioned-element__card--from' : '',
+      routeRole === 'to' ? 'positioned-element__card--to' : '',
+    ].filter(Boolean).join(' ');
+
     const cardStyle = isHighlighted
       ? {
           ...room.baseCardStyle,
@@ -297,14 +311,36 @@ const RoomElement = React.memo(
       !room.showIconOnly && room.defaultText !== undefined && room.defaultText !== null;
     const showHoverText = !room.showIconOnly && room.hasHoverText;
 
+    const isSelectable = room.isSelectable;
+
     return (
       <div
         className={rootClassName}
-        style={room.baseStyle}
-        onClick={room.onClick}
+        style={{ ...room.baseStyle, cursor: isSelectable ? 'pointer' : room.baseStyle.cursor }}
+        role={isSelectable ? 'button' : undefined}
+        tabIndex={isSelectable ? 0 : undefined}
+        aria-label={isSelectable ? `${room.routeLabel}. Обрати як точку маршруту` : undefined}
+        onClick={(e) => {
+          room.onClick?.();
+          if (!isSelectable) return;
+          e.stopPropagation();
+          onPick(room.id);
+        }}
+        onKeyDown={(e) => {
+          if (!isSelectable) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onPick(room.id);
+          }
+        }}
         onMouseEnter={room.onHover}
       >
         <div style={room.contentStyle}>
+          {routeRole && (
+            <span className={`positioned-element__pin positioned-element__pin--${routeRole}`} aria-hidden="true">
+              {routeRole === 'from' ? 'А' : 'Б'}
+            </span>
+          )}
           <div style={cardStyle} className={cardClassName}>
             {showDefaultText && (
               <span className="positioned-element__text positioned-element__text--default">
@@ -344,6 +380,10 @@ const RoomElement = React.memo(
       return false;
     }
 
+    if (prev.routeRole !== next.routeRole) {
+      return false;
+    }
+
     if (prev.isHighlighted && prev.highlightColor !== next.highlightColor) {
       return false;
     }
@@ -361,6 +401,13 @@ export const PositionedElementsRenderer: React.FC<PositionedElementsRendererProp
 }) => {
   const [highlightedRoomIds, setHighlightedRoomIds] = useState<string[]>([]);
   const [currentHighlightColor, setCurrentHighlightColor] = useState<string>(DEFAULT_HIGHLIGHT_COLOR);
+  const [selection, setSelection] = useState<RouteSelection>({ fromId: null, toId: null });
+
+  useEffect(() => routeSelectionService.subscribe(setSelection), []);
+
+  const handlePick = React.useCallback((roomId: string) => {
+    routeSelectionService.pick(roomId);
+  }, []);
 
   useEffect(() => {
     const handleHighlight = (event: { roomId: string | null; roomIds?: string[]; highlightColor: string }) => {
@@ -396,7 +443,10 @@ export const PositionedElementsRenderer: React.FC<PositionedElementsRendererProp
       );
       const hasHoverText = Boolean(hoverText && hoverText.trim());
       const showIconOnly = resolveIconOnly(squareConfig, Boolean(resolvedImgSrc), defaultText);
-      const iconAlt = showIconOnly ? getRoomLabel(squareConfig, language) : '';
+      const routeLabel = getRoomLabel(squareConfig, language);
+      const iconAlt = showIconOnly ? routeLabel : '';
+      // Клікабельні лише ті кімнати, які реально можна обрати як точку маршруту
+      const isSelectable = selectableRoomsById.has(squareConfig.id);
 
       const baseStyle: React.CSSProperties = {
         position: 'absolute',
@@ -433,6 +483,8 @@ export const PositionedElementsRenderer: React.FC<PositionedElementsRendererProp
         hasHoverText,
         showIconOnly,
         iconAlt,
+        isSelectable,
+        routeLabel,
         baseStyle,
         baseCardStyle,
         contentStyle,
@@ -460,9 +512,13 @@ export const PositionedElementsRenderer: React.FC<PositionedElementsRendererProp
             isHighlighted={highlightedRoomIdsSet.has(element.id)}
             highlightColor={highlightColor}
             highlightVars={highlightVars}
+            routeRole={
+              selection.fromId === element.id ? 'from' : selection.toId === element.id ? 'to' : null
+            }
+            onPick={handlePick}
           />
         )),
-    [preparedRooms, highlightedRoomIdsSet, highlightColor, highlightVars, activeFloor]
+    [preparedRooms, highlightedRoomIdsSet, highlightColor, highlightVars, activeFloor, selection, handlePick]
   );
 
   return (

@@ -44,6 +44,44 @@
   animation-delay: 0.25s;
 }
 
+/* --- Точки маршруту, обрані кліком по карті --- */
+.positioned-element__card--from {
+  outline: 3px solid #2e7d32;
+  outline-offset: 2px;
+}
+
+.positioned-element__card--to {
+  outline: 3px solid #c62828;
+  outline-offset: 2px;
+}
+
+.positioned-element__pin {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border-radius: 13px;
+  border: 2px solid #fff;
+  color: #fff;
+  font: 700 15px/22px Inter, sans-serif;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  user-select: none;
+}
+
+.positioned-element__pin--from {
+  background: #2e7d32;
+}
+
+.positioned-element__pin--to {
+  background: #c62828;
+}
+
 .positioned-element__text {
   white-space: pre-line;
 }
