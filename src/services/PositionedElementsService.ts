@@ -13,7 +13,7 @@ export interface PositionedElementConfig {
   fontSize?: number; // font size for number
   fontColor?: string; // font color for number
   // If provided, the element should render an image sprite instead of a colored box
-  imgSrc?: string; // path to sprite (e.g., './src/Sprite/stair.png')
+  imgSrc?: string; // шлях до іконки від кореня сайту, напр. '/Sprite/Stairs-icon.svg' (файли в public/Sprite)
   category?: 'regular' | 'toilet' | 'stairs' | 'buffet';
   /**
    * true  — показувати лише іконку, без підпису (вбиральні, сходи, буфет);

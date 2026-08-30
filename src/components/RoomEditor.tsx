@@ -18,14 +18,15 @@ interface RoomEditorProps {
   mapScale: number;
 }
 
+// Шляхи від кореня сайту — файли лежать у public/Sprite і працюють у білді.
 const ICON_OPTIONS = [
   { label: 'Немає', value: '' },
-  { label: 'Туалет (WC)', value: './src/Sprite/WC-icon.svg' },
-  { label: 'Людина', value: './src/Sprite/Person-walk.svg' },
-  { label: 'Сходи', value: './src/Sprite/Stairs-icon.svg' },
-  { label: 'Буфет', value: './src/Sprite/Buffet-icon.svg' },
-  { label: 'Бібліотека', value: './src/Sprite/Library-icon.svg' },
-  { label: 'Вихід', value: './src/Sprite/Exit-icon.svg' },
+  { label: 'Туалет (WC)', value: '/Sprite/WC-icon.svg' },
+  { label: 'Людина', value: '/Sprite/Person-walk.svg' },
+  { label: 'Сходи', value: '/Sprite/Stairs-icon.svg' },
+  { label: 'Буфет', value: '/Sprite/Buffet-icon.svg' },
+  { label: 'Бібліотека', value: '/Sprite/Library-icon.svg' },
+  { label: 'Вихід', value: '/Sprite/Exit-icon.svg' },
 ];
 
 let uid = 0;

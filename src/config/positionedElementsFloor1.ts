@@ -215,7 +215,7 @@ export const corridorGroupsFloor1: FloorCorridorGroups = {
         height: 196,
         corridor: 2,
         text: { OnDefault: { Ukrainian: "stairslibrary1floor", English: "stairslibrary1floor" } },
-        imgSrc: './src/Sprite/Stairs-icon.svg',
+        imgSrc: '/Sprite/Stairs-icon.svg',
         styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
       createRoom({
@@ -538,7 +538,7 @@ export const corridorGroupsFloor1: FloorCorridorGroups = {
         rotation: 1,
         corridor: 4,
         text: { OnDefault: { Ukrainian: "stairseconom1floor", English: "stairseconom1floor" } },
-        imgSrc: './src/Sprite/Stairs-icon.svg',
+        imgSrc: '/Sprite/Stairs-icon.svg',
         styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
       createRoom({

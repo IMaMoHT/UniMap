@@ -236,24 +236,34 @@ const getSizingText = (
   return defaultValue;
 };
 
+/**
+ * Іконки лежать у public/Sprite і віддаються з кореня сайту (`/Sprite/...`).
+ *
+ * Раніше шлях був `./src/Sprite/...` — це працювало лише в dev-режимі, бо Vite
+ * роздає вихідні файли. У продакшн-збірці папки `src` не існує, тож усі іконки
+ * туалетів/сходів/буфету віддавали 404. Тут же нормалізуємо старі значення,
+ * які могли лишитись у конфігах після «Копіювати код».
+ */
+const SPRITE_BASE = '/Sprite/';
+
+export const normalizeSpritePath = (value: string): string =>
+  value.replace(/^\.?\/?src\/Sprite\//, SPRITE_BASE);
+
 const resolveImgSrc = (squareConfig: PositionedElementConfig): string | undefined => {
   if (squareConfig.imgSrc) {
-    return squareConfig.imgSrc;
+    return normalizeSpritePath(squareConfig.imgSrc);
   }
 
-  if (squareConfig.category === 'toilet') {
-    return './src/Sprite/WC-icon.svg';
+  switch (squareConfig.category) {
+    case 'toilet':
+      return `${SPRITE_BASE}WC-icon.svg`;
+    case 'stairs':
+      return `${SPRITE_BASE}Stairs-icon.svg`;
+    case 'buffet':
+      return `${SPRITE_BASE}Buffet-icon.svg`;
+    default:
+      return undefined;
   }
-
-  if (squareConfig.category === 'stairs') {
-    return './src/Sprite/Stairs-icon.svg';
-  }
-
-  if (squareConfig.category === 'buffet') {
-    return './src/Sprite/Buffet-icon.svg';
-  }
-
-  return undefined;
 };
 
 interface RoomElementProps {

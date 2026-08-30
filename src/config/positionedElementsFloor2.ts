@@ -485,7 +485,7 @@ export const corridorGroupsFloor2: FloorCorridorGroups = {
         height: 70,
         corridor: 1,
         text: { OnDefault: { Ukrainian: "toilet2stairs", English: "toilet2stairs" } },
-        imgSrc: './src/Sprite/WC-icon.svg',
+        imgSrc: '/Sprite/WC-icon.svg',
         styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
       createRoom({
@@ -510,7 +510,7 @@ export const corridorGroupsFloor2: FloorCorridorGroups = {
         rotation: 1,
         corridor: 1,
         text: { OnDefault: { Ukrainian: "Евакуаційний вихід", English: "Евакуаційний вихід" } },
-        imgSrc: './src/Sprite/Stairs-icon.svg',
+        imgSrc: '/Sprite/Stairs-icon.svg',
         styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
       createRoom({
@@ -523,7 +523,7 @@ export const corridorGroupsFloor2: FloorCorridorGroups = {
         rotation: 1,
         corridor: 1,
         text: { OnDefault: { Ukrainian: "Туалет", English: "Туалет" } },
-        imgSrc: './src/Sprite/WC-icon.svg',
+        imgSrc: '/Sprite/WC-icon.svg',
         styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
     ],
