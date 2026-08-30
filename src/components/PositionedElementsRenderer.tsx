@@ -545,20 +545,38 @@ export const PositionedElementsRenderer: React.FC<PositionedElementsRendererProp
     [preparedRooms, highlightedRoomIdsSet, highlightColor, highlightVars, activeFloor, selection, handlePick]
   );
 
+  /*
+   * position: absolute замість fixed — контейнер і так живе всередині
+   * трансформованого контейнера карти, де fixed поводиться як absolute, але
+   * менш передбачувано (у деяких мобільних браузерах шар «відв'язується»).
+   *
+   * Прибрано will-change/translate3d: вони промотували елемент 3100×3300 в
+   * окремий GPU-шар, який при зумі не встигав растеризуватись — саме через це
+   * підписи аудиторій зникали при віддаленні.
+   *
+   * transform лишаємо лише тоді, коли він реально щось робить (адмін-режими
+   * передають власний mapTransform); у звичайному режимі це тотожність.
+   */
+  const isIdentityTransform =
+    mapTransform.scale === 1 && mapTransform.x === 0 && mapTransform.y === 0;
+
   return (
-    <div 
+    <div
       className={`positioned-elements-container ${containerClassName}`}
       style={{
-        position: 'fixed',
+        position: 'absolute',
         top: 0,
         left: 0,
         width: `${MAP_WIDTH}px`,
         height: `${MAP_HEIGHT}px`,
         pointerEvents: 'none',
         zIndex: 10,
-        transform: `translate3d(${mapTransform.x}px, ${mapTransform.y}px, 0) scale(${mapTransform.scale})`,
-        transformOrigin: '0 0',
-        willChange: 'transform',
+        ...(isIdentityTransform
+          ? {}
+          : {
+              transform: `translate(${mapTransform.x}px, ${mapTransform.y}px) scale(${mapTransform.scale})`,
+              transformOrigin: '0 0',
+            }),
         ...containerStyle
       }}
     >

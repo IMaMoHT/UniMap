@@ -38,7 +38,7 @@ const SetARoute: React.FC<SetARouteProps> = ({ onRouteBuild, activeFloor, onFloo
   const getRoomInfo = (roomId: string): SelectableRoom | undefined => selectableRoomsById.get(roomId);
 
   const buildRoute = useCallback(
-    (fromId: string, toId: string) => {
+    (fromId: string, toId: string, focusStartFloor = true) => {
       const fromRoom = selectableRoomsById.get(fromId);
       const toRoom = selectableRoomsById.get(toId);
       if (!fromRoom || !toRoom) {
@@ -68,7 +68,11 @@ const SetARoute: React.FC<SetARouteProps> = ({ onRouteBuild, activeFloor, onFloo
         });
         roomHighlightService.highlightRooms([fromId, toId], { color: ROUTE_HIGHLIGHT_COLOR });
 
-        if (fromRoom.floor !== toRoom.floor) {
+        // Перемикаємо поверх ЛИШЕ при першій побудові конкретного маршруту.
+        // Раніше це робилось при кожній побудові, тож щойно користувач вручну
+        // перемикався на 2/3 поверх, будь-який перерахунок кидав його назад
+        // на поверх старту — саме звідси відчуття «не можу перейти».
+        if (focusStartFloor && fromRoom.floor !== toRoom.floor) {
           onFloorChange?.(fromRoom.floor);
         }
 
@@ -128,10 +132,11 @@ const SetARoute: React.FC<SetARouteProps> = ({ onRouteBuild, activeFloor, onFloo
         if (fromId && toId && fromId !== toId) {
           // не перебудовуємо ту саму пару двічі
           const key = `${fromId}->${toId}`;
+          // та сама пара вже побудована — нічого не робимо (і не смикаємо поверх)
           if (lastBuiltRef.current === key) return;
           lastBuiltRef.current = key;
           setDeepLinkNotice(null);
-          buildRouteRef.current(fromId, toId);
+          buildRouteRef.current(fromId, toId, true);
         } else {
           lastBuiltRef.current = '';
           // одна точка або жодної — прибираємо стару лінію, лишаємо підсвітку

@@ -29,11 +29,42 @@ const BeaconRenderer = lazy(() => import("@/components/BeaconRenderer"));
 
 type GraphNode = { id: string; x: number; y: number; floor: number; roomId?: string };
 
-/** Масштаб, за якого карта повністю влазить у вікно (з невеликим полем). */
-function computeFitScale(): number {
-  if (typeof window === 'undefined') return 0.4;
-  const scale = Math.min(window.innerWidth / MAP_WIDTH, window.innerHeight / MAP_HEIGHT) * 0.95;
-  return Math.max(0.05, Math.min(scale, 1));
+/** Ширина, з якої вважаємо пристрій «великим» (ноутбук/десктоп). */
+const DESKTOP_MIN_WIDTH = 1100;
+
+interface ZoomLimits {
+  initialScale: number;
+  minScale: number;
+  maxScale: number;
+  /** Використовується як React-key: перемонтуємо карту лише при зміні класу пристрою */
+  profile: 'desktop' | 'compact';
+}
+
+/**
+ * Межі зуму залежно від пристрою.
+ *
+ * Десктоп — як було історично (0.8 / 0.4 / 1): на великому екрані карта і так
+ * читається, а вільне віддалення лише збивало звичну поведінку.
+ *
+ * Телефон/планшет — рахуємо від розміру екрана: карта 3100×3300 фізично не
+ * влазить у 375 px при мінімумі 0.4, тож там потрібен масштаб «вписати у вікно»
+ * і можливість відійти ще далі.
+ */
+function computeZoomLimits(): ZoomLimits {
+  const desktop: ZoomLimits = { initialScale: 0.8, minScale: 0.4, maxScale: 1, profile: 'desktop' };
+  if (typeof window === 'undefined') return desktop;
+  if (window.innerWidth >= DESKTOP_MIN_WIDTH) return desktop;
+
+  // Ширина екрана стабільніша за висоту: на мобільних висота стрибає, коли
+  // ховається адресний рядок, і від неї не можна рахувати початковий масштаб.
+  const fit = Math.min(window.innerWidth / MAP_WIDTH, window.innerHeight / MAP_HEIGHT) * 0.95;
+  const initialScale = Math.max(0.05, Math.min(fit, 1));
+  return {
+    initialScale,
+    minScale: Math.max(0.05, initialScale * 0.6),
+    maxScale: 2.5,
+    profile: 'compact',
+  };
 }
 
 /**
@@ -113,15 +144,14 @@ export default function MainPage() {
   const [showNodes, setShowNodes] = useState(true);
 
   /**
-   * Масштаб, за якого вся карта вміщується у видиму область.
-   * Раніше minScale був жорстко 0.4 — на телефоні (≈375 px) для карти 3100 px
-   * потрібно ≈0.12, тож карту неможливо було віддалити до повного вигляду.
+   * Межі зуму. Перераховуються при зміні розміру вікна / повороті екрана,
+   * щоб перехід між телефоном і десктопом (напр. поворот планшета) не лишав
+   * неправильні обмеження.
    */
-  const [fitScale, setFitScale] = useState(() => computeFitScale());
-  const minScale = Math.min(fitScale * 0.6, 0.5);
+  const [zoom, setZoom] = useState<ZoomLimits>(() => computeZoomLimits());
 
   useEffect(() => {
-    const onResize = () => setFitScale(computeFitScale());
+    const onResize = () => setZoom(computeZoomLimits());
     window.addEventListener('resize', onResize);
     window.addEventListener('orientationchange', onResize);
     return () => {
@@ -273,9 +303,13 @@ export default function MainPage() {
   return (
     <AppLayout>
       <TransformWrapper
-        initialScale={fitScale}
-        minScale={minScale}
-        maxScale={2.5}
+        // Перемонтовуємо лише при зміні класу пристрою (поворот планшета),
+        // а не на кожну зміну висоти — інакше ховання адресного рядка
+        // на телефоні скидало б поточний вигляд карти.
+        key={zoom.profile}
+        initialScale={zoom.initialScale}
+        minScale={zoom.minScale}
+        maxScale={zoom.maxScale}
         // limitToBounds лишаємо увімкненим, щоб карту не можна було відтягнути
         // за край екрана; centerZoomedOut центрує її, коли масштаб менший за
         // «вписаний» — саме ця пара дозволяє вільно віддаляти і не губити карту.
@@ -295,8 +329,16 @@ export default function MainPage() {
       >
         {() => (
           <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh', overflow: 'hidden', backgroundColor: '#ffffff' }}>
-            <div 
-              style={{ position: 'relative', width: `${MAP_WIDTH}px`, height: `${MAP_HEIGHT}px`, willChange: 'transform', transform: 'translate3d(0, 0, 0)', backfaceVisibility: 'hidden' }}
+            {/*
+              БЕЗ will-change/translate3d: вони примусово роблять з елемента
+              3100×3300 один суцільний GPU-шар. При віддаленні/наближенні браузер
+              не встигає його растеризувати (а на межі розміру текстури — просто
+              скидає), через що карта «пропадає з прогрузки». Трансформацію і так
+              робить react-zoom-pan-pinch на батьківському контейнері, тому нехай
+              браузер сам тайлить і малює те, що видно.
+            */}
+            <div
+              style={{ position: 'relative', width: `${MAP_WIDTH}px`, height: `${MAP_HEIGHT}px` }}
               onClick={handleMapClick}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
@@ -339,35 +381,35 @@ export default function MainPage() {
               {/* Декоративні шари ізольовані: биті дані в sceneryItems/будівлях
                   не мають ронити карту й маршрут */}
               <div style={{ position: 'relative', zIndex: 5 }}>
-                <MapErrorBoundary section="Двір і озеленення">
+                <MapErrorBoundary section="Двір і озеленення" resetKey={activeFloor}>
                   {activeFloor === 1 && <Courtyard />}
                   {activeFloor === 1 && mode !== 'scenery' && <Scenery />}
                   {ADMIN_ENABLED && mode === 'scenery' && <SceneryEditor mapScale={mapScale} />}
                 </MapErrorBoundary>
-                <MapErrorBoundary section="Конструктор будівель">
+                <MapErrorBoundary section="Конструктор будівель" resetKey={activeFloor}>
                   {activeFloor === 1 && mode !== 'building' && <CustomBuildingRenderer floor={1} />}
                   {ADMIN_ENABLED && mode === 'building' && <CustomBuildingEditor mapScale={mapScale} />}
                 </MapErrorBoundary>
               </div>
 
               {mode !== 'rooms' && (
-                <MapErrorBoundary section="Аудиторії">
+                <MapErrorBoundary section="Аудиторії" resetKey={activeFloor}>
                   <PositionedElementsRenderer mapTransform={{ scale: 1, x: 0, y: 0 }} activeFloor={activeFloor} />
                 </MapErrorBoundary>
               )}
 
-              <MapErrorBoundary section="Маршрут">
+              <MapErrorBoundary section="Маршрут" resetKey={activeFloor}>
                 <NodePathRenderer path={nodePath} activeFloor={activeFloor} onFloorChange={setActiveFloor} />
               </MapErrorBoundary>
 
               {ADMIN_ENABLED && mode === 'rooms' && (
-                <MapErrorBoundary section="Редактор аудиторій">
+                <MapErrorBoundary section="Редактор аудиторій" resetKey={activeFloor}>
                   <RoomEditor activeFloor={activeFloor} mapScale={mapScale} />
                 </MapErrorBoundary>
               )}
 
               {ADMIN_ENABLED && mode === 'qr' && (
-                <MapErrorBoundary section="Генератор QR">
+                <MapErrorBoundary section="Генератор QR" resetKey={activeFloor}>
                   <QrCodeAdmin />
                 </MapErrorBoundary>
               )}
