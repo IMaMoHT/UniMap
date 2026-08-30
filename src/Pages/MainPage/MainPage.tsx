@@ -38,6 +38,14 @@ interface ZoomLimits {
   maxScale: number;
   /** Використовується як React-key: перемонтуємо карту лише при зміні класу пристрою */
   profile: 'desktop' | 'compact';
+  // --- Параметри керування (на десктопі мають лишатись рівно такими, як були) ---
+  centerZoomedOut: boolean;
+  zoomAnimationTime: number;
+  wheelStep: number;
+  panningVelocityDisabled: boolean;
+  /** undefined = поведінка бібліотеки за замовчуванням (як було на ПК) */
+  pinchStep?: number;
+  doubleClickStep?: number;
 }
 
 /**
@@ -51,12 +59,21 @@ interface ZoomLimits {
  * і можливість відійти ще далі.
  */
 function computeZoomLimits(): ZoomLimits {
-  const desktop: ZoomLimits = { initialScale: 0.8, minScale: 0.4, maxScale: 1, profile: 'desktop' };
+  // Точні значення з версії до правок зуму (коміт cd04a30) — не міняти без потреби
+  const desktop: ZoomLimits = {
+    initialScale: 0.8,
+    minScale: 0.4,
+    maxScale: 1,
+    profile: 'desktop',
+    centerZoomedOut: false,
+    zoomAnimationTime: 400,
+    wheelStep: 0.015,
+    panningVelocityDisabled: false,
+  };
+
   if (typeof window === 'undefined') return desktop;
   if (window.innerWidth >= DESKTOP_MIN_WIDTH) return desktop;
 
-  // Ширина екрана стабільніша за висоту: на мобільних висота стрибає, коли
-  // ховається адресний рядок, і від неї не можна рахувати початковий масштаб.
   const fit = Math.min(window.innerWidth / MAP_WIDTH, window.innerHeight / MAP_HEIGHT) * 0.95;
   const initialScale = Math.max(0.05, Math.min(fit, 1));
   return {
@@ -64,6 +81,14 @@ function computeZoomLimits(): ZoomLimits {
     minScale: Math.max(0.05, initialScale * 0.6),
     maxScale: 2.5,
     profile: 'compact',
+    // На телефоні карту треба вміти сильно віддаляти, тож центруємо її,
+    // коли масштаб менший за «вписаний», і робимо керування чутливішим.
+    centerZoomedOut: true,
+    zoomAnimationTime: 250,
+    wheelStep: 0.06,
+    panningVelocityDisabled: true,
+    pinchStep: 6,
+    doubleClickStep: 0.8,
   };
 }
 
@@ -310,22 +335,21 @@ export default function MainPage() {
         initialScale={zoom.initialScale}
         minScale={zoom.minScale}
         maxScale={zoom.maxScale}
-        // limitToBounds лишаємо увімкненим, щоб карту не можна було відтягнути
-        // за край екрана; centerZoomedOut центрує її, коли масштаб менший за
-        // «вписаний» — саме ця пара дозволяє вільно віддаляти і не губити карту.
         limitToBounds
-        centerZoomedOut
+        centerZoomedOut={zoom.centerZoomedOut}
         centerOnInit
         // ВАЖЛИВО: onTransform спрацьовує на КОЖНОМУ кадрі панорамування/зуму.
         // setState тут перемальовував усю карту 60 разів на секунду — головна
         // причина лагів. Тепер масштаб зберігаємо лише коли він реально потрібен
         // (адмін-редактори рахують від нього координати), у продакшні — ніколи.
         onTransform={handleTransform}
-        zoomAnimation={{ disabled: false, animationTime: 250, animationType: "easeOut" }}
-        wheel={{ step: 0.06, wheelDisabled: false }}
-        pinch={{ step: 6 }}
-        doubleClick={{ disabled: false, step: 0.8, animationTime: 200 }}
-        panning={{ disabled: mode !== 'off', velocityDisabled: true }}
+        zoomAnimation={{ disabled: false, animationTime: zoom.zoomAnimationTime, animationType: "easeOut" }}
+        wheel={{ step: zoom.wheelStep, wheelDisabled: false }}
+        {...(zoom.pinchStep !== undefined ? { pinch: { step: zoom.pinchStep } } : {})}
+        {...(zoom.doubleClickStep !== undefined
+          ? { doubleClick: { disabled: false, step: zoom.doubleClickStep, animationTime: 200 } }
+          : {})}
+        panning={{ disabled: mode !== 'off', velocityDisabled: zoom.panningVelocityDisabled }}
       >
         {() => (
           <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh', overflow: 'hidden', backgroundColor: '#ffffff' }}>
