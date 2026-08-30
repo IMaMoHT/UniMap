@@ -11,6 +11,7 @@ import {
 } from '../../../config/positionedElements';
 import { readDeepLinkParams } from '../../../utils/deepLink';
 import routeSelectionService from '../../../services/RouteSelectionService';
+import mapViewService from '../../../services/MapViewService';
 
 interface SetARouteProps {
   onRouteBuild?: (from: string, to: string) => void;
@@ -100,7 +101,18 @@ const SetARoute: React.FC<SetARouteProps> = ({ onRouteBuild, activeFloor, onFloo
     routeSelectionService.setFrom(params.startRoomId);
     if (typeof params.floor === 'number') onFloorChange?.(params.floor);
 
-    const startLabel = selectableRoomsById.get(params.startRoomId)?.label;
+    const startRoom = selectableRoomsById.get(params.startRoomId);
+    const startLabel = startRoom?.label;
+
+    // Наближаємо карту до відсканованої аудиторії. Затримка — щоб карта встигла
+    // змонтуватись і застосувати початковий масштаб, інакше setTransform
+    // перезатирається ініціалізацією TransformWrapper.
+    if (startRoom) {
+      window.setTimeout(() => {
+        mapViewService.focusOn({ x: startRoom.x, y: startRoom.y });
+      }, 350);
+    }
+
     if (startLabel && !params.destinationRoomId) {
       setDeepLinkNotice(`Ви тут: ${startLabel}. Оберіть, куди прокласти маршрут.`);
     }

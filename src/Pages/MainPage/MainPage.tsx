@@ -1,4 +1,4 @@
-import React, { useState, Suspense, lazy, useEffect } from "react";
+import React, { useState, Suspense, lazy, useEffect, useRef } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 import { MAP_WIDTH, MAP_HEIGHT } from "@/config/mapDimensions";
@@ -24,6 +24,7 @@ import CustomBuildingEditor from "@/components/CustomBuildingEditor";
 import QrCodeAdmin from "@/components/QrCodeAdmin";
 import MapErrorBoundary from "@/components/MapErrorBoundary";
 import { ADMIN_ENABLED } from "@/config/appConfig";
+import mapViewService from "@/services/MapViewService";
 
 const BeaconRenderer = lazy(() => import("@/components/BeaconRenderer"));
 
@@ -128,6 +129,51 @@ function createNode(
 
   const trimmedRoomId = roomId.trim();
   return { id, x, y, floor, ...(trimmedRoomId ? { roomId: trimmedRoomId } : {}) };
+}
+
+/**
+ * Слухає запити «показати цю точку карти» і рухає вигляд.
+ *
+ * Живе всередині рендер-пропу TransformWrapper, бо лише там доступний
+ * `setTransform`. Нічого не малює.
+ */
+function MapFocusBridge({
+  setTransform,
+  getScale,
+  zoom,
+}: {
+  setTransform: (x: number, y: number, scale: number, animationTime?: number) => void;
+  getScale: () => number;
+  zoom: ZoomLimits;
+}) {
+  // Тримаємо в ref: рендер-проп TransformWrapper віддає нові функції на кожен
+  // кадр трансформації, і без цього підписка перестворювалась би постійно.
+  const apiRef = useRef({ setTransform, getScale, zoom });
+  apiRef.current = { setTransform, getScale, zoom };
+
+  useEffect(
+    () =>
+      mapViewService.subscribe(({ x, y, scale, animationTime = 400 }) => {
+        const api = apiRef.current;
+
+        // Масштаб «щоб було видно кімнату і маршрут біля неї».
+        // Без цього після сканування QR карта лишалась у вписаному масштабі
+        // (на телефоні ≈0.12), де лінія маршруту тонша за піксель — здавалося,
+        // що маршрут узагалі не будується.
+        const preferred = scale ?? Math.max(api.getScale(), api.zoom.profile === 'compact' ? 0.9 : 0.8);
+        const target = Math.min(api.zoom.maxScale, Math.max(api.zoom.minScale, preferred));
+
+        api.setTransform(
+          window.innerWidth / 2 - x * target,
+          window.innerHeight / 2 - y * target,
+          target,
+          animationTime,
+        );
+      }),
+    [],
+  );
+
+  return null;
 }
 
 /** Пошук дублікатів id — тільки в dev, щоб проблема не тонула мовчки. */
@@ -351,8 +397,9 @@ export default function MainPage() {
           : {})}
         panning={{ disabled: mode !== 'off', velocityDisabled: zoom.panningVelocityDisabled }}
       >
-        {() => (
+        {({ setTransform, instance }) => (
           <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh', overflow: 'hidden', backgroundColor: '#ffffff' }}>
+            <MapFocusBridge setTransform={setTransform} getScale={() => instance.state.scale} zoom={zoom} />
             {/*
               БЕЗ will-change/translate3d: вони примусово роблять з елемента
               3100×3300 один суцільний GPU-шар. При віддаленні/наближенні браузер
