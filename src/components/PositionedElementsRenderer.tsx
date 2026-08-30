@@ -147,6 +147,9 @@ interface PreparedRoom extends PositionedElementConfig {
 /** Категорії, для яких іконка самодостатня і підпис лише заважає. */
 const ICON_ONLY_CATEGORIES = new Set(['toilet', 'stairs', 'buffet']);
 
+/** Максимальний зсув пальця/миші (px), за якого натискання ще вважається кліком. */
+const MAX_TAP_MOVE = 10;
+
 /**
  * Технічні підписи, що приїхали з конфігів ("stairs1", "toilet1",
  * "stairsrotunda2"...). Такий текст ніколи не має накладатися на іконку.
@@ -312,6 +315,30 @@ const RoomElement = React.memo(
     const showHoverText = !room.showIconOnly && room.hasHoverText;
 
     const isSelectable = room.isSelectable;
+    // Точка натискання — щоб відрізнити клік від перетягування карти.
+    // Через react-zoom-pan-pinch звичайний onClick ненадійний: і мишею, і пальцем
+    // найменший зсув перетворює натискання на панорамування.
+    const pressRef = React.useRef<{ x: number; y: number; id: number } | null>(null);
+
+    const handlePointerDown = (e: React.PointerEvent) => {
+      if (!isSelectable) return;
+      pressRef.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    };
+
+    const handlePointerUp = (e: React.PointerEvent) => {
+      if (!isSelectable) return;
+      const press = pressRef.current;
+      pressRef.current = null;
+      if (!press || press.id !== e.pointerId) return;
+
+      // Зсув більший за поріг — це було перетягування карти, не вибір аудиторії
+      const moved = Math.hypot(e.clientX - press.x, e.clientY - press.y);
+      if (moved > MAX_TAP_MOVE) return;
+
+      e.stopPropagation();
+      room.onClick?.();
+      onPick(room.id);
+    };
 
     return (
       <div
@@ -320,12 +347,9 @@ const RoomElement = React.memo(
         role={isSelectable ? 'button' : undefined}
         tabIndex={isSelectable ? 0 : undefined}
         aria-label={isSelectable ? `${room.routeLabel}. Обрати як точку маршруту` : undefined}
-        onClick={(e) => {
-          room.onClick?.();
-          if (!isSelectable) return;
-          e.stopPropagation();
-          onPick(room.id);
-        }}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={() => { pressRef.current = null; }}
         onKeyDown={(e) => {
           if (!isSelectable) return;
           if (e.key === 'Enter' || e.key === ' ') {

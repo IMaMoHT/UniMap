@@ -111,6 +111,14 @@ const SetARoute: React.FC<SetARouteProps> = ({ onRouteBuild, activeFloor, onFloo
    * вибір у пошуку одразу відображається в полях «Звідки/Куди», а щойно обидві
    * точки задані — маршрут будується сам, без натискання кнопки.
    */
+  // buildRoute змінює ідентичність разом із пропсами MenuBar, тому тримаємо його
+  // в ref: підписка створюється РІВНО один раз і не перезапускає побудову маршруту
+  // на кожному ререндері (це і давало зайві перерахунки та підгальмовування).
+  const buildRouteRef = useRef(buildRoute);
+  buildRouteRef.current = buildRoute;
+
+  const lastBuiltRef = useRef<string>('');
+
   useEffect(
     () =>
       routeSelectionService.subscribe(({ fromId, toId }) => {
@@ -118,9 +126,14 @@ const SetARoute: React.FC<SetARouteProps> = ({ onRouteBuild, activeFloor, onFloo
         setToValue(toId ?? '');
 
         if (fromId && toId && fromId !== toId) {
+          // не перебудовуємо ту саму пару двічі
+          const key = `${fromId}->${toId}`;
+          if (lastBuiltRef.current === key) return;
+          lastBuiltRef.current = key;
           setDeepLinkNotice(null);
-          buildRoute(fromId, toId);
+          buildRouteRef.current(fromId, toId);
         } else {
+          lastBuiltRef.current = '';
           // одна точка або жодної — прибираємо стару лінію, лишаємо підсвітку
           routeService.clearRoutes();
           setRouteInfo(null);
@@ -131,7 +144,7 @@ const SetARoute: React.FC<SetARouteProps> = ({ onRouteBuild, activeFloor, onFloo
           );
         }
       }),
-    [buildRoute],
+    [],
   );
 
   const handleRouteBuild = () => {

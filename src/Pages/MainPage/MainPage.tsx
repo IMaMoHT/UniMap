@@ -29,6 +29,13 @@ const BeaconRenderer = lazy(() => import("@/components/BeaconRenderer"));
 
 type GraphNode = { id: string; x: number; y: number; floor: number; roomId?: string };
 
+/** Масштаб, за якого карта повністю влазить у вікно (з невеликим полем). */
+function computeFitScale(): number {
+  if (typeof window === 'undefined') return 0.4;
+  const scale = Math.min(window.innerWidth / MAP_WIDTH, window.innerHeight / MAP_HEIGHT) * 0.95;
+  return Math.max(0.05, Math.min(scale, 1));
+}
+
 /**
  * Генерація id вузла, стійка до колізій.
  *
@@ -104,6 +111,32 @@ export default function MainPage() {
   const [mapScale, setMapScale] = useState(1);
   const [nodePath, setNodePath] = useState<PathResult | null>(null);
   const [showNodes, setShowNodes] = useState(true);
+
+  /**
+   * Масштаб, за якого вся карта вміщується у видиму область.
+   * Раніше minScale був жорстко 0.4 — на телефоні (≈375 px) для карти 3100 px
+   * потрібно ≈0.12, тож карту неможливо було віддалити до повного вигляду.
+   */
+  const [fitScale, setFitScale] = useState(() => computeFitScale());
+  const minScale = Math.min(fitScale * 0.6, 0.5);
+
+  useEffect(() => {
+    const onResize = () => setFitScale(computeFitScale());
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+    };
+  }, []);
+
+  // Масштаб потрібен лише адмін-редакторам; у продакшні не чіпаємо стан взагалі
+  const handleTransform = ADMIN_ENABLED
+    ? (ref: { state: { scale: number } }) => {
+        const next = ref.state.scale;
+        setMapScale((prev) => (Math.abs(prev - next) > 0.01 ? next : prev));
+      }
+    : undefined;
 
   useEffect(() => {
     warnAboutDuplicateNodeIds(nodes);
@@ -240,16 +273,25 @@ export default function MainPage() {
   return (
     <AppLayout>
       <TransformWrapper
-        initialScale={0.8}
-        minScale={0.4}
-        maxScale={1}
-        limitToBounds={true}
-        centerZoomedOut={false}
-        centerOnInit={true}
-        onTransform={(ref) => setMapScale(ref.state.scale)}
-        zoomAnimation={{ disabled: false, animationTime: 400, animationType: "easeOut" }}
-        wheel={{ step: 0.015, wheelDisabled: false }}
-        panning={{ disabled: mode !== 'off' }}
+        initialScale={fitScale}
+        minScale={minScale}
+        maxScale={2.5}
+        // limitToBounds лишаємо увімкненим, щоб карту не можна було відтягнути
+        // за край екрана; centerZoomedOut центрує її, коли масштаб менший за
+        // «вписаний» — саме ця пара дозволяє вільно віддаляти і не губити карту.
+        limitToBounds
+        centerZoomedOut
+        centerOnInit
+        // ВАЖЛИВО: onTransform спрацьовує на КОЖНОМУ кадрі панорамування/зуму.
+        // setState тут перемальовував усю карту 60 разів на секунду — головна
+        // причина лагів. Тепер масштаб зберігаємо лише коли він реально потрібен
+        // (адмін-редактори рахують від нього координати), у продакшні — ніколи.
+        onTransform={handleTransform}
+        zoomAnimation={{ disabled: false, animationTime: 250, animationType: "easeOut" }}
+        wheel={{ step: 0.06, wheelDisabled: false }}
+        pinch={{ step: 6 }}
+        doubleClick={{ disabled: false, step: 0.8, animationTime: 200 }}
+        panning={{ disabled: mode !== 'off', velocityDisabled: true }}
       >
         {() => (
           <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh', overflow: 'hidden', backgroundColor: '#ffffff' }}>

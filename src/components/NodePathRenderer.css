@@ -4,6 +4,8 @@
   left: 0;
   pointer-events: none;
   z-index: 14;
+  /* Ізолює перемальовування анімованої лінії від решти карти */
+  contain: layout paint;
 }
 
 .node-path-svg {
@@ -29,19 +31,38 @@
   stroke-linejoin: round;
 }
 
-/* Animated "flow" dashes that show walking direction */
+/*
+ * Анімовані «біжучі» риски, що показують напрямок руху.
+ *
+ * stroke-dashoffset неможливо анімувати на композиторі — браузер перемальовує
+ * шлях щокадру. На карті 3100×3300 це найдорожча анімація в застосунку, тому:
+ *  • сповільнили цикл (менше кадрів перемальовування);
+ *  • обмежили область перемальовування через contain на шарі;
+ *  • повністю вимикаємо, якщо система просить зменшити рух.
+ */
 .node-path__flow {
   fill: none;
   stroke: rgba(255, 255, 255, 0.9);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 2 26;
-  animation: node-path-flow 0.9s linear infinite;
+  animation: node-path-flow 1.4s linear infinite;
 }
 
 @keyframes node-path-flow {
   to {
     stroke-dashoffset: -28;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-path__flow {
+    animation: none;
+    opacity: 0.5;
+  }
+
+  .node-path__finish-ring {
+    animation: none;
   }
 }
 

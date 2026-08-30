@@ -20,28 +20,26 @@
   will-change: box-shadow, border-color, transform, opacity;
 }
 
+/*
+ * Підсвітка кімнати.
+ * Анімуємо ТІЛЬКИ transform і opacity — їх браузер обробляє на композиторі,
+ * без перемальовування. Раніше тут пульсували box-shadow і filter:drop-shadow:
+ * обидва змушують перемальовувати шар щокадру і були помітною причиною
+ * підгальмовування на телефоні, особливо разом з анімацією лінії маршруту.
+ */
 .positioned-element__card--highlighted {
-  animation: roomHighlightPulse 1.6s ease-in-out infinite;
+  border-color: var(--room-highlight-border-strong);
 }
 
-.positioned-element__card--highlighted::before,
-.positioned-element__card--highlighted::after {
+.positioned-element__card--highlighted::before {
   content: '';
   position: absolute;
   inset: -4px;
   border-radius: inherit;
   border: 2px solid var(--room-highlight-border);
-  opacity: 0.55;
   pointer-events: none;
-  filter: drop-shadow(0 0 6px var(--room-highlight-glow));
+  will-change: transform, opacity;
   animation: roomHighlightRings 1.8s ease-in-out infinite;
-}
-
-.positioned-element__card--highlighted::after {
-  inset: -8px;
-  border-width: 1px;
-  opacity: 0.35;
-  animation-delay: 0.25s;
 }
 
 /* --- Точки маршруту, обрані кліком по карті --- */
@@ -119,32 +117,25 @@
   opacity: 0.9;
 }
 
-@keyframes roomHighlightPulse {
-  0% {
-    box-shadow: 0 0 0 0 var(--room-highlight-glow);
-    border-color: var(--room-highlight-border);
-  }
-  50% {
-    box-shadow: 0 0 18px 6px var(--room-highlight-glow-soft);
-    border-color: var(--room-highlight-border-strong);
-  }
-  100% {
-    box-shadow: 0 0 0 0 var(--room-highlight-glow);
-    border-color: var(--room-highlight-border);
-  }
-}
-
 @keyframes roomHighlightRings {
   0% {
     transform: scale(0.98);
     opacity: 0.2;
   }
   50% {
-    transform: scale(1.04);
-    opacity: 0.75;
+    transform: scale(1.05);
+    opacity: 0.8;
   }
   100% {
     transform: scale(0.98);
     opacity: 0.2;
+  }
+}
+
+/* Повага до системного налаштування «зменшити рух» */
+@media (prefers-reduced-motion: reduce) {
+  .positioned-element__card--highlighted::before {
+    animation: none;
+    opacity: 0.7;
   }
 }
