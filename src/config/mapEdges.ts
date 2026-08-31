@@ -630,21 +630,6 @@ export const mapEdges = [
     "floor": 2
   },
   {
-    "from": "f2_node_75",
-    "to": "f2_node_76",
-    "floor": 2
-  },
-  {
-    "from": "f2_node_76",
-    "to": "f2_node_77",
-    "floor": 2
-  },
-  {
-    "from": "f2_node_76",
-    "to": "f2_node_219",
-    "floor": 2
-  },
-  {
     "from": "f2_node_83",
     "to": "f2_node_82",
     "floor": 2
@@ -667,11 +652,6 @@ export const mapEdges = [
   {
     "from": "f2_node_81",
     "to": "f2_node_79",
-    "floor": 2
-  },
-  {
-    "from": "f2_node_79",
-    "to": "f2_node_78",
     "floor": 2
   },
   {
@@ -947,16 +927,6 @@ export const mapEdges = [
   {
     "from": "f2_node_102",
     "to": "f2_node_237",
-    "floor": 2
-  },
-  {
-    "from": "f2_node_78",
-    "to": "f2_node_282",
-    "floor": 2
-  },
-  {
-    "from": "f2_node_77",
-    "to": "f2_node_283",
     "floor": 2
   },
   {
@@ -1643,5 +1613,40 @@ export const mapEdges = [
     "from": "f3_node_333",
     "to": "f3_node_336",
     "floor": 3
+  },
+  {
+    "from": "f3_node_337",
+    "to": "f3_node_140",
+    "floor": 3
+  },
+  {
+    "from": "f2_node_338",
+    "to": "f2_node_82",
+    "floor": 2
+  },
+  {
+    "from": "f3_node_290",
+    "to": "f3_node_341",
+    "floor": 3
+  },
+  {
+    "from": "f2_node_79",
+    "to": "f2_node_344",
+    "floor": 2
+  },
+  {
+    "from": "f2_node_75",
+    "to": "f2_node_342",
+    "floor": 2
+  },
+  {
+    "from": "f2_node_342",
+    "to": "f2_node_343",
+    "floor": 2
+  },
+  {
+    "from": "f2_node_342",
+    "to": "f2_node_283",
+    "floor": 2
   }
 ];

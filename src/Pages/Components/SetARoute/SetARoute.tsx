@@ -137,18 +137,19 @@ const SetARoute: React.FC<SetARouteProps> = ({ onRouteBuild, activeFloor, onFloo
 
   useEffect(
     () =>
-      routeSelectionService.subscribe(({ fromId, toId }) => {
+      routeSelectionService.subscribe(({ fromId, toId, resolvedFromId, resolvedToId }) => {
         setFromValue(fromId ?? '');
         setToValue(toId ?? '');
 
-        if (fromId && toId && fromId !== toId) {
-          // не перебудовуємо ту саму пару двічі
-          const key = `${fromId}->${toId}`;
+        // Маршрут будуємо за РОЗКРИТИМИ id: якщо обрано групу («Туалет»),
+        // тут уже конкретне найближче приміщення.
+        if (resolvedFromId && resolvedToId && resolvedFromId !== resolvedToId) {
+          const key = `${resolvedFromId}->${resolvedToId}`;
           // та сама пара вже побудована — нічого не робимо (і не смикаємо поверх)
           if (lastBuiltRef.current === key) return;
           lastBuiltRef.current = key;
           setDeepLinkNotice(null);
-          buildRouteRef.current(fromId, toId, true);
+          buildRouteRef.current(resolvedFromId, resolvedToId, true);
         } else {
           lastBuiltRef.current = '';
           // одна точка або жодної — прибираємо стару лінію, лишаємо підсвітку
@@ -156,7 +157,7 @@ const SetARoute: React.FC<SetARouteProps> = ({ onRouteBuild, activeFloor, onFloo
           setRouteInfo(null);
           setError(null);
           roomHighlightService.highlightRooms(
-            [fromId, toId].filter((id): id is string => Boolean(id)),
+            [resolvedFromId, resolvedToId].filter((id): id is string => Boolean(id)),
             { color: ROUTE_HIGHLIGHT_COLOR },
           );
         }

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import './RouteInput.css';
 import Button from '../UI/Button';
-import { selectableRooms, selectableRoomsById, type SelectableRoom } from '../../../config/positionedElements';
+import { routePickerOptions, routePickerOptionsById, type RoutePickerOption } from '../../../config/positionedElements';
 import { sanitizeText } from '../../../utils/sanitize';
 
 interface RouteInputProps {
@@ -28,16 +28,16 @@ const RouteInput: React.FC<RouteInputProps> = ({ fromValue, toValue, onFromChang
   const toRootRef = useRef<HTMLDivElement>(null);
 
   const getDisplayName = (roomId: string) =>
-    selectableRoomsById.get(roomId)?.label ?? 'Оберіть приміщення';
+    routePickerOptionsById.get(roomId)?.label ?? 'Оберіть приміщення';
 
   /**
    * Пошук по всіх приміщеннях (не лише нумерованих кабінетах).
    * Запит санітизується — у фільтр не потрапляють керуючі символи.
    */
-  const filterRooms = (query: string): SelectableRoom[] => {
+  const filterRooms = (query: string): RoutePickerOption[] => {
     const q = sanitizeText(query, 60).toLowerCase();
-    if (!q) return selectableRooms;
-    return selectableRooms.filter(
+    if (!q) return routePickerOptions;
+    return routePickerOptions.filter(
       (room) =>
         room.label.toLowerCase().includes(q) ||
         room.id.toLowerCase().includes(q) ||
@@ -70,7 +70,7 @@ const RouteInput: React.FC<RouteInputProps> = ({ fromValue, toValue, onFromChang
   const toggle = (side: Side) => setOpenSide((prev) => (prev === side ? null : side));
 
   const handleSelect = (side: Side, roomId: string) => {
-    if (!selectableRoomsById.has(roomId)) return; // ігноруємо невідомі id
+    if (!routePickerOptionsById.has(roomId)) return; // ігноруємо невідомі id
     if (side === 'from') onFromChange(roomId);
     else onToChange(roomId);
     setOpenSide(null);
@@ -82,7 +82,7 @@ const RouteInput: React.FC<RouteInputProps> = ({ fromValue, toValue, onFromChang
     value: string,
     query: string,
     setQuery: (v: string) => void,
-    rooms: SelectableRoom[],
+    rooms: RoutePickerOption[],
     rootRef: React.RefObject<HTMLDivElement | null>,
   ) => {
     const isOpen = openSide === side;
@@ -124,7 +124,7 @@ const RouteInput: React.FC<RouteInputProps> = ({ fromValue, toValue, onFromChang
                     {room.label}
                     {badge ? ` · ${badge}` : ''}
                   </span>
-                  <span className="RouteSelector-item__floor">{room.floor} поверх</span>
+                  <span className="RouteSelector-item__floor">{room.floor === null ? 'кілька поверхів' : `${room.floor} поверх`}</span>
                 </li>
               );
             })}

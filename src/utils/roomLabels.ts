@@ -80,15 +80,17 @@ export function getRoomLabel(room: PositionedElementConfig, language: Language =
   if (hasNumber) return String(room.number);
   if (name) return name;
 
-  // Немає ні номера, ні назви — підставляємо тип приміщення
-  const floor = room.floor ?? 1;
+  // Немає ні номера, ні назви — підставляємо тип приміщення.
+  // Без номера поверху: однотипні приміщення об'єднуються в одну позицію
+  // списку («Туалет»), а конкретний — найближчий — обирається при побудові
+  // маршруту (див. resolveRoomPairIds у config/positionedElements.ts).
   switch (room.category) {
     case 'toilet':
-      return language === 'English' ? `Restroom, floor ${floor}` : `Туалет ${floor} поверх`;
+      return language === 'English' ? 'Restroom' : 'Туалет';
     case 'stairs':
-      return language === 'English' ? `Stairs, floor ${floor}` : `Сходи ${floor} поверх`;
+      return language === 'English' ? 'Stairs' : 'Сходи';
     case 'buffet':
-      return language === 'English' ? `Cafeteria, floor ${floor}` : `Буфет ${floor} поверх`;
+      return language === 'English' ? 'Cafeteria' : 'Буфет';
     default:
       return sanitizeText(room.id, 120) || (language === 'English' ? 'Unnamed' : 'Без назви');
   }

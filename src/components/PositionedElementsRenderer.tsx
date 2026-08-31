@@ -425,7 +425,12 @@ export const PositionedElementsRenderer: React.FC<PositionedElementsRendererProp
 }) => {
   const [highlightedRoomIds, setHighlightedRoomIds] = useState<string[]>([]);
   const [currentHighlightColor, setCurrentHighlightColor] = useState<string>(DEFAULT_HIGHLIGHT_COLOR);
-  const [selection, setSelection] = useState<RouteSelection>({ fromId: null, toId: null });
+  const [selection, setSelection] = useState<RouteSelection>({
+    fromId: null,
+    toId: null,
+    resolvedFromId: null,
+    resolvedToId: null,
+  });
 
   useEffect(() => routeSelectionService.subscribe(setSelection), []);
 
@@ -536,8 +541,14 @@ export const PositionedElementsRenderer: React.FC<PositionedElementsRendererProp
             isHighlighted={highlightedRoomIdsSet.has(element.id)}
             highlightColor={highlightColor}
             highlightVars={highlightVars}
+            // Мітки ставимо на РОЗКРИТІ id: якщо обрано групу («Туалет»),
+            // підсвічуємо саме той туалет, який реально увійшов у маршрут.
             routeRole={
-              selection.fromId === element.id ? 'from' : selection.toId === element.id ? 'to' : null
+              selection.resolvedFromId === element.id
+                ? 'from'
+                : selection.resolvedToId === element.id
+                  ? 'to'
+                  : null
             }
             onPick={handlePick}
           />

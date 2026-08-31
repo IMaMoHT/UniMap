@@ -1,8 +1,12 @@
-import { selectableRoomsById } from '../config/positionedElements';
+import { isKnownPickId, resolveRoomPairIds } from '../config/positionedElements';
 
 export interface RouteSelection {
+  /** Що обрав користувач: id кімнати або id групи («group:Туалет») */
   fromId: string | null;
   toId: string | null;
+  /** Конкретні приміщення після розкриття груп — для маршруту й міток на карті */
+  resolvedFromId: string | null;
+  resolvedToId: string | null;
 }
 
 type Listener = (selection: RouteSelection) => void;
@@ -32,7 +36,28 @@ class RouteSelectionService {
   }
 
   get(): RouteSelection {
-    return { fromId: this.fromId, toId: this.toId };
+    const base = { fromId: this.fromId, toId: this.toId };
+
+    if (this.fromId && this.toId) {
+      // Група («Туалет») розкривається в найближчого представника
+      const pair = resolveRoomPairIds(this.fromId, this.toId);
+      return {
+        ...base,
+        resolvedFromId: pair?.fromId ?? null,
+        resolvedToId: pair?.toId ?? null,
+      };
+    }
+
+    // Одна точка: групу поки не розкриваємо — нема відносно чого шукати найближче
+    return {
+      ...base,
+      resolvedFromId: this.fromId && !this.isGroup(this.fromId) ? this.fromId : null,
+      resolvedToId: this.toId && !this.isGroup(this.toId) ? this.toId : null,
+    };
+  }
+
+  private isGroup(id: string): boolean {
+    return id.startsWith('group:');
   }
 
   private emit(): void {
@@ -47,16 +72,16 @@ class RouteSelectionService {
   }
 
   /** Невідомі id ігноруємо — у стан не має потрапити те, чого немає на карті. */
-  private isValid(roomId: string): boolean {
-    return selectableRoomsById.has(roomId);
+  private isValid(id: string): boolean {
+    return isKnownPickId(id);
   }
 
   /**
-   * Клік по аудиторії. Логіка «одним пальцем»:
-   *   1-й клік            → точка «Звідки»
-   *   2-й клік по іншій   → точка «Куди»
-   *   клік по вже обраній → знімає її
-   *   клік, коли обидві є → починаємо заново з нової точки «Звідки»
+   * Клік по аудиторії на карті.
+   *   немає жодної точки       → «Звідки»
+   *   є «Звідки»               → «Куди» (маршрут будується одразу)
+   *   є обидві                 → міняємо «Куди», старт лишається
+   *   клік по вже обраній      → знімаємо її
    */
   pick(roomId: string): void {
     if (!this.isValid(roomId)) return;
@@ -75,11 +100,11 @@ class RouteSelectionService {
 
     if (!this.fromId) {
       this.fromId = roomId;
-    } else if (!this.toId) {
-      this.toId = roomId;
     } else {
-      this.fromId = roomId;
-      this.toId = null;
+      // Ключова поведінка: коли маршрут уже прокладено, наступний клік замінює
+      // ПРИЗНАЧЕННЯ, а не скидає все. Так новий маршрут будується одразу тим
+      // самим кліком, без потреби вибирати старт наново.
+      this.toId = roomId;
     }
     this.emit();
   }

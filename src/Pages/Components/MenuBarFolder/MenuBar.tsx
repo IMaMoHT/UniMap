@@ -10,7 +10,12 @@ import SettingsContainer from '../SettingsContainer/SettingsContainer';
 import LupaIcon from '../../../Sprite/Loupe.svg';
 import roomHighlightService from '../../../services/RoomHighlightService';
 import routeSelectionService from '../../../services/RouteSelectionService';
-import { selectableRooms, type SelectableRoom } from '../../../config/positionedElements';
+import {
+  routePickerOptions,
+  getPickMemberIds,
+  selectableRoomsById,
+  type RoutePickerOption,
+} from '../../../config/positionedElements';
 import { sanitizeText } from '../../../utils/sanitize';
 
 interface MenuBarProps {
@@ -44,11 +49,11 @@ const MenuBar: React.FC<MenuBarProps> = ({ activeFloor: propActiveFloor, onFloor
    * Раніше список брався з `regularRooms`, тож іменовані приміщення
    * (Бібліотека, Актова зала…) не знаходились взагалі.
    */
-  const filteredRooms = useMemo<SelectableRoom[]>(() => {
+  const filteredRooms = useMemo<RoutePickerOption[]>(() => {
     const query = sanitizeText(searchQuery, 60).toLowerCase();
     if (!query) return [];
 
-    return selectableRooms
+    return routePickerOptions
       .filter(room =>
         room.label.toLowerCase().includes(query) ||
         (typeof room.number === 'number' && String(room.number).includes(query))
@@ -57,7 +62,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ activeFloor: propActiveFloor, onFloor
   }, [searchQuery]);
 
   const selectedSearchRoom = searchSelectedRoomId
-    ? selectableRooms.find(room => room.id === searchSelectedRoomId) ?? null
+    ? routePickerOptions.find(room => room.id === searchSelectedRoomId) ?? null
     : null;
   const showSearchHint = Boolean(selectedSearchRoom);
   const isSearchRoomOnActiveFloor = selectedSearchRoom?.floor === activeFloor;
@@ -74,12 +79,20 @@ const MenuBar: React.FC<MenuBarProps> = ({ activeFloor: propActiveFloor, onFloor
   };
 
   /** Показати кімнату: підсвітити і перемкнути поверх, якщо вона на іншому. */
-  const revealRoom = (room: SelectableRoom) => {
-    roomHighlightService.highlightRoom(room.id);
+  const revealRoom = (room: RoutePickerOption) => {
+    const memberIds = getPickMemberIds(room.id);
+    roomHighlightService.highlightRooms(memberIds);
     setSearchQuery(room.label);
     setSearchSelectedRoomId(room.id);
     setIsSearchDropdownOpen(false);
-    if (room.floor !== activeFloor) handleFloorChange(room.floor);
+
+    // Для групи («Туалет») переходимо на поверх найближчого до поточного члена
+    const targetFloor =
+      room.floor ??
+      memberIds
+        .map((id) => selectableRoomsById.get(id)?.floor ?? activeFloor)
+        .sort((a, b) => Math.abs(a - activeFloor) - Math.abs(b - activeFloor))[0];
+    if (targetFloor !== activeFloor) handleFloorChange(targetFloor);
   };
 
   const handleSearchSubmit = () => {
@@ -91,7 +104,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ activeFloor: propActiveFloor, onFloor
     }
   };
 
-  const handleRoomSelect = (room: SelectableRoom) => revealRoom(room);
+  const handleRoomSelect = (room: RoutePickerOption) => revealRoom(room);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -104,6 +117,26 @@ const MenuBar: React.FC<MenuBarProps> = ({ activeFloor: propActiveFloor, onFloor
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  /**
+   * На телефоні меню займає майже весь екран, тож дотик до карти або будь-якого
+   * порожнього місця має його згортати. На великих екранах меню закріплене —
+   * там така поведінка лише заважала б.
+   */
+  useEffect(() => {
+    if (windowWidth >= 720 || isCollapsed) return;
+
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      // дотик усередині самого меню не рахуємо
+      if (target?.closest('.menu-bar')) return;
+      setIsContentMounted(false);
+      setIsCollapsed(true);
+    };
+
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [windowWidth, isCollapsed]);
 
   let className = "menu-bar";
   if (windowWidth < 720) {
@@ -204,7 +237,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ activeFloor: propActiveFloor, onFloor
                 <div className="route-hint search-hint" role="status">
                   <span className="route-hint__title">Знайдено</span>
                   <span className="route-hint__text">
-                    <strong>{selectedSearchRoom.label}</strong> — {selectedSearchRoom.floor} поверх.{' '}
+                    <strong>{selectedSearchRoom.label}</strong>{selectedSearchRoom.floor !== null ? ` — ${selectedSearchRoom.floor} поверх` : ''}.{' '}
                     {isSearchRoomOnActiveFloor ? 'Підсвічено на карті.' : ''}
                   </span>
                   <div className="search-hint__actions">

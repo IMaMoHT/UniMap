@@ -118,18 +118,6 @@ export const selectableRooms: SelectableRoom[] = (() => {
     }
   }
 
-  // Однакові назви (кілька «Туалет 1 поверх», «Сходи 2 поверх») нумеруємо,
-  // щоб у списку вибору їх можна було розрізнити.
-  const labelCounts = new Map<string, number>();
-  for (const room of result) labelCounts.set(room.label, (labelCounts.get(room.label) ?? 0) + 1);
-  const labelSeen = new Map<string, number>();
-  for (const room of result) {
-    if ((labelCounts.get(room.label) ?? 0) < 2) continue;
-    const index = (labelSeen.get(room.label) ?? 0) + 1;
-    labelSeen.set(room.label, index);
-    room.label = `${room.label} (${index})`;
-  }
-
   // Спершу нумеровані кабінети підряд (1, 2, 3 … незалежно від поверху),
   // далі іменовані приміщення за алфавітом.
   return result.sort((a, b) => {
@@ -149,6 +137,157 @@ export const selectableRooms: SelectableRoom[] = (() => {
 export const selectableRoomsById: Map<string, SelectableRoom> = new Map(
   selectableRooms.map((room) => [room.id, room]),
 );
+
+// ---------------------------------------------------------------------------
+// Групи однойменних приміщень
+// ---------------------------------------------------------------------------
+
+export interface RoomGroup {
+  id: string;
+  label: string;
+  memberIds: string[];
+  floors: number[];
+}
+
+const GROUP_PREFIX = 'group:';
+
+/**
+ * Приміщення з однаковою назвою («Туалет», «Ректорат», «Сходи») об'єднуємо
+ * в одну позицію списку. Раніше вони дублювались і їх доводилось нумерувати
+ * — «Ректорат (1)», «Ректорат (2)», — що ні про що не говорить користувачу.
+ * Конкретне приміщення з групи обирається автоматично: найближче до другої
+ * точки маршруту (див. resolveRoomPairIds).
+ */
+export const roomGroups: RoomGroup[] = (() => {
+  const byLabel = new Map<string, SelectableRoom[]>();
+  for (const room of selectableRooms) {
+    const list = byLabel.get(room.label);
+    if (list) list.push(room);
+    else byLabel.set(room.label, [room]);
+  }
+
+  const groups: RoomGroup[] = [];
+  for (const [label, members] of byLabel) {
+    if (members.length < 2) continue;
+    groups.push({
+      id: `${GROUP_PREFIX}${label}`,
+      label,
+      memberIds: members.map((m) => m.id),
+      floors: Array.from(new Set(members.map((m) => m.floor))).sort((a, b) => a - b),
+    });
+  }
+  return groups;
+})();
+
+export const roomGroupsById: Map<string, RoomGroup> = new Map(roomGroups.map((g) => [g.id, g]));
+
+const groupedRoomIds = new Set(roomGroups.flatMap((g) => g.memberIds));
+
+export interface RoutePickerOption {
+  id: string;
+  label: string;
+  /** Поверх або null, якщо група охоплює кілька поверхів */
+  floor: number | null;
+  category: NonNullable<PositionedElementConfig['category']>;
+  number?: number;
+  isGroup: boolean;
+}
+
+/** Те, що показуємо у списках «Звідки/Куди» та в пошуку. */
+export const routePickerOptions: RoutePickerOption[] = (() => {
+  const options: RoutePickerOption[] = selectableRooms
+    .filter((room) => !groupedRoomIds.has(room.id))
+    .map((room) => ({
+      id: room.id,
+      label: room.label,
+      floor: room.floor,
+      category: room.category,
+      number: room.number,
+      isGroup: false,
+    }));
+
+  for (const group of roomGroups) {
+    const first = selectableRoomsById.get(group.memberIds[0]);
+    options.push({
+      id: group.id,
+      label: group.label,
+      floor: group.floors.length === 1 ? group.floors[0] : null,
+      category: first?.category ?? 'regular',
+      isGroup: true,
+    });
+  }
+
+  return options.sort((a, b) => {
+    const aNum = typeof a.number === 'number';
+    const bNum = typeof b.number === 'number';
+    if (aNum && bNum) return (a.number as number) - (b.number as number);
+    if (aNum) return -1;
+    if (bNum) return 1;
+    return a.label.localeCompare(b.label, 'uk');
+  });
+})();
+
+export const routePickerOptionsById: Map<string, RoutePickerOption> = new Map(
+  routePickerOptions.map((o) => [o.id, o]),
+);
+
+/** Чи існує така точка вибору (конкретна кімната або група). */
+export const isKnownPickId = (id: string): boolean =>
+  selectableRoomsById.has(id) || roomGroupsById.has(id);
+
+/** Людська назва для будь-якого id (кімнати або групи). */
+export const getPickLabel = (id: string): string =>
+  roomGroupsById.get(id)?.label ?? selectableRoomsById.get(id)?.label ?? '';
+
+const membersOf = (id: string): SelectableRoom[] => {
+  const group = roomGroupsById.get(id);
+  if (group) {
+    return group.memberIds
+      .map((memberId) => selectableRoomsById.get(memberId))
+      .filter((room): room is SelectableRoom => Boolean(room));
+  }
+  const room = selectableRoomsById.get(id);
+  return room ? [room] : [];
+};
+
+/** Конкретні кімнати, що стоять за точкою вибору (для групи — усі її члени). */
+export const getPickMemberIds = (id: string): string[] =>
+  roomGroupsById.get(id)?.memberIds ?? (selectableRoomsById.has(id) ? [id] : []);
+
+/** Перехід між поверхами дорожчий за кілька метрів коридором. */
+const FLOOR_PENALTY = 2500;
+
+const pairCost = (a: SelectableRoom, b: SelectableRoom): number =>
+  Math.hypot(a.x - b.x, a.y - b.y) + Math.abs(a.floor - b.floor) * FLOOR_PENALTY;
+
+/**
+ * Перетворює вибір користувача на конкретну пару приміщень.
+ * Якщо обрано групу («Туалет»), береться той її представник, який найближчий
+ * до другої точки маршруту.
+ */
+export function resolveRoomPairIds(
+  fromId: string,
+  toId: string,
+): { fromId: string; toId: string } | null {
+  const fromCandidates = membersOf(fromId);
+  const toCandidates = membersOf(toId);
+  if (fromCandidates.length === 0 || toCandidates.length === 0) return null;
+
+  let best: { fromId: string; toId: string } | null = null;
+  let bestCost = Infinity;
+
+  for (const from of fromCandidates) {
+    for (const to of toCandidates) {
+      if (from.id === to.id) continue;
+      const cost = pairCost(from, to);
+      if (cost < bestCost) {
+        bestCost = cost;
+        best = { fromId: from.id, toId: to.id };
+      }
+    }
+  }
+  return best;
+}
 
 /** Пошук конфігурації кімнати за id по всіх поверхах (без прив'язки до поверху). */
 export const findRoomConfigById = (roomId: string): PositionedElementConfig | undefined => {

@@ -450,24 +450,6 @@ export const mapNodes = [
     "floor": 2
   },
   {
-    "id": "f2_node_76",
-    "x": 2324,
-    "y": 2801,
-    "floor": 2
-  },
-  {
-    "id": "f2_node_77",
-    "x": 2377,
-    "y": 2805,
-    "floor": 2
-  },
-  {
-    "id": "f2_node_78",
-    "x": 1133,
-    "y": 2959,
-    "floor": 2
-  },
-  {
     "id": "f2_node_79",
     "x": 986,
     "y": 2961,
@@ -1354,13 +1336,6 @@ export const mapNodes = [
     "roomId": "Евукуаційний вихід 1 поверх"
   },
   {
-    "id": "f2_node_219",
-    "x": 2292,
-    "y": 2846,
-    "floor": 2,
-    "roomId": "rectorat"
-  },
-  {
     "id": "f2_node_220",
     "x": 741,
     "y": 2997,
@@ -1788,13 +1763,6 @@ export const mapNodes = [
     "roomId": "stairs3floor2"
   },
   {
-    "id": "f2_node_282",
-    "x": 1161,
-    "y": 2959,
-    "floor": 2,
-    "roomId": "rectorat2"
-  },
-  {
     "id": "f2_node_283",
     "x": 2427,
     "y": 2842,
@@ -2139,5 +2107,46 @@ export const mapNodes = [
     "y": 1802,
     "floor": 3,
     "roomId": "деканат"
+  },
+  {
+    "id": "f3_node_337",
+    "x": 540,
+    "y": 1181,
+    "floor": 3,
+    "roomId": "98informaciynyhsystemitechnologiy"
+  },
+  {
+    "id": "f2_node_338",
+    "x": 668,
+    "y": 3059,
+    "floor": 2,
+    "roomId": "conferenceroom"
+  },
+  {
+    "id": "f3_node_341",
+    "x": 1008,
+    "y": 2995,
+    "floor": 3,
+    "roomId": "67"
+  },
+  {
+    "id": "f2_node_342",
+    "x": 2368,
+    "y": 2770,
+    "floor": 2
+  },
+  {
+    "id": "f2_node_343",
+    "x": 2330,
+    "y": 2807,
+    "floor": 2,
+    "roomId": "rectorat"
+  },
+  {
+    "id": "f2_node_344",
+    "x": 1066,
+    "y": 2960,
+    "floor": 2,
+    "roomId": "rectorat"
   }
 ];

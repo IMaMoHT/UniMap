@@ -562,7 +562,7 @@ export const corridorGroupsFloor1: FloorCorridorGroups = {
         height: 62,
         rotation: 1,
         corridor: 4,
-        text: { OnDefault: { Ukrainian: "toileteconom1floor", English: "toileteconom1floor" } },
+        text: { OnDefault: { Ukrainian: "toiletconom1floor", English: "toiletconom1floor" } },
         styleOverrides: { color: '#39A39B', borderColor: '#2d8a84' },
       }),
       createRoom({
